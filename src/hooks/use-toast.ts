@@ -1,13 +1,10 @@
 
-// use-toast.ts
-// Re-export from sonner
+// This file just re-exports from sonner for compatibility
 import { toast } from "sonner";
 
-// Maintain compatibility with any existing code using the useToast hook pattern
+// Create a hook that returns the toast function for components that prefer hooks
 const useToast = () => {
-  return {
-    toast,
-  };
+  return toast;
 };
 
 export { useToast, toast };

@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { MessageSquareText, Youtube, CirclePlay } from "lucide-react";
+import { checkGeminiAccess } from "@/utils/geminiUtils";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [apiKey, setApiKey] = useState('');
+  const [apiKeySet, setApiKeySet] = useState(true); // Set to true since we use a fixed key now
   const [showApiKeyForm, setShowApiKeyForm] = useState(false);
   const [aiModel, setAiModel] = useState('standard');
-  const { toast } = useToast();
+  const [geminiAvailable, setGeminiAvailable] = useState(false);
 
   useEffect(() => {
     // Check if this is running in a Chrome extension context
@@ -25,25 +26,28 @@ const Index = () => {
           setUserEmail(result.userInfo.email || '');
         }
         
-        // Check if we already have the Gemini API key (we're now using the hardcoded one)
-        setApiKey('AIzaSyCkxngJEfNG2IRp7bsUFjrWUQc4ZsOTOkY');
+        // API key is now fixed in the code
+        setApiKeySet(true);
         setShowApiKeyForm(false);
         
         if (result.aiModel) {
           setAiModel(result.aiModel);
         }
         
+        // Check if Gemini is accessible
+        checkGeminiAccess().then(available => {
+          setGeminiAvailable(available);
+        });
+        
         setIsLoading(false);
       });
     } else {
       // Web version - show message that this is meant for Chrome extension
-      toast({
-        title: "Chrome Extension Required",
-        description: "This application is designed to run as a Chrome extension.",
-      });
+      toast("Chrome Extension Required",
+        { description: "This application is designed to run as a Chrome extension." });
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   const handleAuth = () => {
     if (window.chrome?.runtime) {
@@ -52,16 +56,11 @@ const Index = () => {
           setIsAuthenticated(true);
           setUserEmail(response.userInfo?.email || '');
           
-          toast({
-            title: "Authentication Successful",
-            description: "You are now signed in with YouTube.",
-          });
+          toast("Authentication Successful", 
+            { description: "You are now signed in with YouTube." });
         } else {
-          toast({
-            title: "Authentication Failed",
-            description: "Please try again.",
-            variant: "destructive",
-          });
+          toast("Authentication Failed", 
+            { description: "Please try again.", variant: "destructive" });
         }
       });
     }
@@ -75,16 +74,11 @@ const Index = () => {
         setIsLoading(false);
         
         if (response && response.success) {
-          toast({
-            title: "Videos Fetched",
-            description: `${response.count} videos have been fetched from your YouTube account.`,
-          });
+          toast("Videos Fetched", 
+            { description: `${response.count} videos have been fetched from your YouTube account.` });
         } else {
-          toast({
-            title: "Failed to Fetch Videos",
-            description: "Please try again or check your connection.",
-            variant: "destructive",
-          });
+          toast("Failed to Fetch Videos", 
+            { description: "Please try again or check your connection.", variant: "destructive" });
         }
       });
     }
@@ -94,35 +88,8 @@ const Index = () => {
     if (window.chrome?.runtime && window.chrome?.tabs) {
       window.chrome.tabs.create({ url: window.chrome.runtime.getURL('dashboard.html') });
     } else {
-      toast({
-        title: "Extension Context Required",
-        description: "This feature is only available in the Chrome extension.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSaveApiKey = () => {
-    if (window.chrome?.runtime) {
-      // Since we're now using a hardcoded API key, this just confirms it's set
-      window.chrome.runtime.sendMessage({ 
-        action: 'saveApiKey',
-        apiKey: apiKey
-      }, (response) => {
-        if (response && response.success) {
-          toast({
-            title: "API Key Saved",
-            description: "Your Gemini API key has been saved successfully.",
-          });
-          setShowApiKeyForm(false);
-        } else {
-          toast({
-            title: "Failed to Save API Key",
-            description: "Please try again.",
-            variant: "destructive",
-          });
-        }
-      });
+      toast("Extension Context Required", 
+        { description: "This feature is only available in the Chrome extension.", variant: "destructive" });
     }
   };
 
@@ -134,16 +101,11 @@ const Index = () => {
       }, (response) => {
         if (response && response.success) {
           setAiModel(model);
-          toast({
-            title: "AI Model Updated",
-            description: `Now using ${model === 'advanced' ? 'advanced' : 'Gemini 2.5 Flash'} model for summaries.`,
-          });
+          toast("AI Model Updated", 
+            { description: `Now using ${model === 'advanced' ? 'advanced' : 'Gemini 2.5 Flash'} model for summaries.` });
         } else {
-          toast({
-            title: "Failed to Update AI Model",
-            description: "Please try again.",
-            variant: "destructive",
-          });
+          toast("Failed to Update AI Model", 
+            { description: "Please try again.", variant: "destructive" });
         }
       });
     }
@@ -155,10 +117,8 @@ const Index = () => {
         setIsAuthenticated(false);
         setUserEmail('');
         
-        toast({
-          title: "Signed Out",
-          description: "You have been signed out of your YouTube account.",
-        });
+        toast("Signed Out", 
+          { description: "You have been signed out of your YouTube account." });
       });
     }
   };
@@ -237,10 +197,8 @@ const Index = () => {
                       onClick={() => {
                         if (window.chrome?.runtime) {
                           window.chrome.runtime.sendMessage({ action: 'exportData' });
-                          toast({
-                            title: "Export Started",
-                            description: "Your data export has started. Please wait a moment."
-                          });
+                          toast("Export Started", 
+                            { description: "Your data export has started. Please wait a moment." });
                         }
                       }}
                       className="w-full flex justify-between items-center px-4 py-3 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
@@ -298,17 +256,22 @@ const Index = () => {
                             variant="default"
                             className="w-full"
                             onClick={() => {
-                              toast({
-                                title: "AI Summary Feature Active",
-                                description: "You'll see the 'Summarize Video' panel on YouTube videos.",
-                              });
+                              toast("AI Summary Feature Active", 
+                                { description: "You'll see the 'Summarize Video' panel on YouTube videos." });
                             }}
                           >
                             Summarize Videos with Gemini
                           </Button>
                           
-                          <div className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-md border border-emerald-100">
-                            Gemini 2.5 Flash model ready for fast video summaries!
+                          <div className={`text-xs p-2 rounded-md border ${
+                            geminiAvailable 
+                              ? 'text-emerald-700 bg-emerald-50 border-emerald-100'
+                              : 'text-amber-700 bg-amber-50 border-amber-100'
+                          }`}>
+                            {geminiAvailable 
+                              ? "Gemini 2.5 Flash model ready for fast video summaries!"
+                              : "Checking Gemini API connection..."
+                            }
                           </div>
                         </div>
                       </div>
