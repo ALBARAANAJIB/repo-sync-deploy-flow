@@ -12,15 +12,6 @@ export interface VideoSummaryOptions {
   videoTitle?: string;
   channelTitle?: string;
   transcript?: string;
-  maxLength?: number;
-  requestType?: 'default' | 'detailed';
-}
-
-interface VideoMetadata {
-  videoId: string;
-  title?: string;
-  channelTitle?: string;
-  thumbnail?: string;
 }
 
 /**
@@ -94,7 +85,7 @@ function formatSummaryAsHtml(text: string): string {
 /**
  * Fetch video metadata from YouTube oEmbed
  */
-async function fetchVideoMetadata(videoId: string): Promise<VideoMetadata | null> {
+async function fetchVideoMetadata(videoId: string): Promise<any> {
   try {
     const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
     
@@ -166,25 +157,14 @@ export async function generateVideoSummary(options: VideoSummaryOptions): Promis
     let promptText = "";
     const transcriptText = options.transcript || "";
     
-    if (options.requestType === 'detailed') {
-      promptText = `Please create a detailed summary of this YouTube video${title ? ' titled "' + title + '"' : ''}${channelTitle ? ' by ' + channelTitle : ''}.\n\n`;
-      
-      if (transcriptText) {
-        promptText += `Here is the transcript:\n\n${transcriptText}\n\n`;
-        promptText += `Provide a comprehensive summary including key points, main arguments, and important information shared in the video. Format your response in HTML with bullet points for better readability.`;
-      } else {
-        promptText += `Based on the title and channel information, suggest what this video might cover. Format your response in HTML with bullet points.`;
-      }
+    // Simple prompt for summarization
+    promptText = `Create a concise summary of this YouTube video${title ? ' titled "' + title + '"' : ''}${channelTitle ? ' by ' + channelTitle : ''}.\n\n`;
+    
+    if (transcriptText) {
+      promptText += `Here is the transcript:\n\n${transcriptText}\n\n`;
+      promptText += `Provide 3-5 key bullet points covering the main takeaways. Format your response in HTML using <ul> and <li> tags for the bullet points and keep it easy to scan.`;
     } else {
-      // Default summary format
-      promptText = `Create a concise summary of this YouTube video${title ? ' titled "' + title + '"' : ''}${channelTitle ? ' by ' + channelTitle : ''}.\n\n`;
-      
-      if (transcriptText) {
-        promptText += `Here is the transcript:\n\n${transcriptText}\n\n`;
-        promptText += `Provide 3-5 key bullet points covering the main takeaways. Format your response in HTML using <ul> and <li> tags for the bullet points and keep it easy to scan.`;
-      } else {
-        promptText += `Based on the title and creator information, provide your best guess at what this video might cover. Format your response in HTML with bullet points using <ul> and <li> tags, and note at the beginning that this is a prediction since no transcript was available.`;
-      }
+      promptText += `Based on the title and creator information, provide your best guess at what this video might cover. Format your response in HTML with bullet points using <ul> and <li> tags, and note at the beginning that this is a prediction since no transcript was available.`;
     }
     
     // Generate content using the Gemini model

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -43,7 +44,7 @@ const Index = () => {
       });
     } else {
       // Web version - show message that this is meant for Chrome extension
-      toast("Chrome Extension Required",
+      toast("Chrome Extension Required", 
         { description: "This application is designed to run as a Chrome extension." });
       setIsLoading(false);
     }
@@ -60,7 +61,7 @@ const Index = () => {
             { description: "You are now signed in with YouTube." });
         } else {
           toast("Authentication Failed", 
-            { description: "Please try again.", variant: "destructive" });
+            { description: "Please try again." });
         }
       });
     }
@@ -78,7 +79,7 @@ const Index = () => {
             { description: `${response.count} videos have been fetched from your YouTube account.` });
         } else {
           toast("Failed to Fetch Videos", 
-            { description: "Please try again or check your connection.", variant: "destructive" });
+            { description: "Please try again or check your connection." });
         }
       });
     }
@@ -89,7 +90,7 @@ const Index = () => {
       window.chrome.tabs.create({ url: window.chrome.runtime.getURL('dashboard.html') });
     } else {
       toast("Extension Context Required", 
-        { description: "This feature is only available in the Chrome extension.", variant: "destructive" });
+        { description: "This feature is only available in the Chrome extension." });
     }
   };
 
@@ -105,7 +106,7 @@ const Index = () => {
             { description: `Now using ${model === 'advanced' ? 'advanced' : 'Gemini 2.5 Flash'} model for summaries.` });
         } else {
           toast("Failed to Update AI Model", 
-            { description: "Please try again.", variant: "destructive" });
+            { description: "Please try again." });
         }
       });
     }
