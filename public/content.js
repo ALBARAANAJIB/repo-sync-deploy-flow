@@ -1,4 +1,3 @@
-
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'showToast') {
@@ -846,7 +845,8 @@ function injectSummaryPanel() {
         action: 'extractAndSummarizeFromPage',
         videoId: videoId,
         videoTitle: videoTitle,
-        channelTitle: channelTitle
+        channelTitle: channelTitle,
+        useGemini25Flash: true  // Enable the new Gemini 2.5 Flash model
       }, (response) => {
         if (chrome.runtime.lastError) {
           console.error('Error in chrome.runtime.sendMessage:', chrome.runtime.lastError);
@@ -857,6 +857,17 @@ function injectSummaryPanel() {
         if (response && response.success) {
           // Format and display the summary
           displaySummary(response.summary);
+          
+          // Cache the summary for future use
+          chrome.storage.local.get(['videoSummaries'], (result) => {
+            const summaries = result.videoSummaries || {};
+            summaries[videoId] = {
+              summary: response.summary,
+              timestamp: new Date().toISOString(),
+              title: videoTitle
+            };
+            chrome.storage.local.set({ videoSummaries: summaries });
+          });
         } else {
           // Show error message with more helpful information about what went wrong
           const errorMsg = response?.error || 'Unknown error occurred';

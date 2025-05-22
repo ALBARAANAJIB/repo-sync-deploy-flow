@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,11 +25,9 @@ const Index = () => {
           setUserEmail(result.userInfo.email || '');
         }
         
-        if (result.aiApiKey) {
-          setApiKey(result.aiApiKey);
-        } else {
-          setShowApiKeyForm(true);
-        }
+        // Check if we already have the Gemini API key (we're now using the hardcoded one)
+        setApiKey('AIzaSyCkxngJEfNG2IRp7bsUFjrWUQc4ZsOTOkY');
+        setShowApiKeyForm(false);
         
         if (result.aiModel) {
           setAiModel(result.aiModel);
@@ -107,16 +104,7 @@ const Index = () => {
 
   const handleSaveApiKey = () => {
     if (window.chrome?.runtime) {
-      // Simplified validation - we'll just make sure something was entered
-      if (!apiKey || apiKey.trim() === '') {
-        toast({
-          title: "API Key Required",
-          description: "Please enter your API key.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
+      // Since we're now using a hardcoded API key, this just confirms it's set
       window.chrome.runtime.sendMessage({ 
         action: 'saveApiKey',
         apiKey: apiKey
@@ -124,7 +112,7 @@ const Index = () => {
         if (response && response.success) {
           toast({
             title: "API Key Saved",
-            description: "Your API key has been saved successfully.",
+            description: "Your Gemini API key has been saved successfully.",
           });
           setShowApiKeyForm(false);
         } else {
@@ -148,7 +136,7 @@ const Index = () => {
           setAiModel(model);
           toast({
             title: "AI Model Updated",
-            description: `Now using ${model} model for summaries.`,
+            description: `Now using ${model === 'advanced' ? 'advanced' : 'Gemini 2.5 Flash'} model for summaries.`,
           });
         } else {
           toast({
@@ -220,32 +208,6 @@ const Index = () => {
                 <span className="ml-3 text-gray-700">{userEmail}</span>
               </div>
 
-              {showApiKeyForm && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                  <h3 className="text-lg font-medium text-blue-800 mb-2">AI Summary Setup</h3>
-                  <p className="text-sm text-blue-600 mb-4">
-                    To use the AI video summary feature, please enter your API key from 
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline ml-1">Google AI Studio</a>.
-                  </p>
-                  <div className="flex flex-col space-y-2">
-                    <input 
-                      type="text" 
-                      placeholder="Enter your API key"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <Button 
-                      onClick={handleSaveApiKey}
-                      disabled={!apiKey}
-                      className="w-full"
-                    >
-                      Save API Key
-                    </Button>
-                  </div>
-                </div>
-              )}
-
               <Tabs defaultValue="videos" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-4">
                   <TabsTrigger value="videos">Video Management</TabsTrigger>
@@ -298,47 +260,43 @@ const Index = () => {
                       <div>
                         <h3 className="text-lg font-medium text-gray-900 mb-1">Smart Video Summaries</h3>
                         <p className="text-sm text-gray-600 mb-4">
-                          Get instant AI-generated summaries of any YouTube video using advanced transcript analysis.
-                          {!apiKey && " You'll need to set up your API key first."}
+                          Get instant AI-generated summaries of any YouTube video using Gemini 2.5 Flash technology.
                         </p>
                         <p className="text-xs text-gray-500 mb-4">
                           This feature adds a "Summarize Video" button to YouTube video pages and provides intelligent bullet-point summaries.
                         </p>
                         
-                        {apiKey && (
-                          <div className="mb-4">
-                            <p className="text-sm font-medium text-gray-700 mb-2">Choose summarization mode:</p>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Button
-                                variant={aiModel === "standard" ? "default" : "outline"} 
-                                size="sm"
-                                onClick={() => handleSaveAiModel("standard")}
-                                className="justify-start"
-                              >
-                                <CirclePlay className="h-4 w-4 mr-2" />
-                                Standard
-                                <span className="ml-auto text-xs opacity-70">Faster</span>
-                              </Button>
-                              
-                              <Button
-                                variant={aiModel === "advanced" ? "default" : "outline"}
-                                size="sm" 
-                                onClick={() => handleSaveAiModel("advanced")}
-                                className="justify-start"
-                              >
-                                <CirclePlay className="h-4 w-4 mr-2" />
-                                Advanced
-                                <span className="ml-auto text-xs opacity-70">Better</span>
-                              </Button>
-                            </div>
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Choose summarization mode:</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              variant={aiModel === "standard" ? "default" : "outline"} 
+                              size="sm"
+                              onClick={() => handleSaveAiModel("standard")}
+                              className="justify-start"
+                            >
+                              <CirclePlay className="h-4 w-4 mr-2" />
+                              Standard
+                              <span className="ml-auto text-xs opacity-70">Faster</span>
+                            </Button>
+                            
+                            <Button
+                              variant={aiModel === "advanced" ? "default" : "outline"}
+                              size="sm" 
+                              onClick={() => handleSaveAiModel("advanced")}
+                              className="justify-start"
+                            >
+                              <CirclePlay className="h-4 w-4 mr-2" />
+                              Advanced
+                              <span className="ml-auto text-xs opacity-70">Better</span>
+                            </Button>
                           </div>
-                        )}
+                        </div>
                         
                         <div className="flex flex-col space-y-2">
                           <Button 
-                            variant={apiKey ? "default" : "secondary"}
+                            variant="default"
                             className="w-full"
-                            disabled={!apiKey}
                             onClick={() => {
                               toast({
                                 title: "AI Summary Feature Active",
@@ -346,34 +304,26 @@ const Index = () => {
                               });
                             }}
                           >
-                            {apiKey ? "Summarize Videos" : "API Key Required"}
+                            Summarize Videos with Gemini
                           </Button>
                           
-                          {apiKey ? (
-                            <Button 
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => setShowApiKeyForm(true)}
-                            >
-                              Change API Key
-                            </Button>
-                          ) : null}
+                          <div className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-md border border-emerald-100">
+                            Gemini 2.5 Flash model ready for fast video summaries!
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  {apiKey && (
-                    <div className="bg-gray-50 p-4 rounded border border-gray-200 mt-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Coming soon:</h4>
-                      <ul className="text-xs text-gray-600 space-y-2 list-disc pl-5">
-                        <li>Batch summarization of multiple videos</li>
-                        <li>Custom summary formats and lengths</li>
-                        <li>Topic extraction and keyword analysis</li>
-                        <li>Video recommendations based on your interests</li>
-                      </ul>
-                    </div>
-                  )}
+                  <div className="bg-gray-50 p-4 rounded border border-gray-200 mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Coming soon:</h4>
+                    <ul className="text-xs text-gray-600 space-y-2 list-disc pl-5">
+                      <li>Batch summarization of multiple videos</li>
+                      <li>Custom summary formats and lengths</li>
+                      <li>Topic extraction and keyword analysis</li>
+                      <li>Video recommendations based on your interests</li>
+                    </ul>
+                  </div>
                 </TabsContent>
               </Tabs>
 
