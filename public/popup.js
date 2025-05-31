@@ -14,11 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check if user is already authenticated
   chrome.storage.local.get(['userToken', 'userInfo'], (result) => {
     if (result.userToken && result.userInfo) {
-      // User is authenticated, show features
       loginContainer.style.display = 'none';
       featuresContainer.style.display = 'block';
       
-      // Display user info
       if (result.userInfo.email) {
         userEmail.textContent = result.userInfo.email;
         userInitial.textContent = result.userInfo.email.charAt(0).toUpperCase();
@@ -27,7 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
         userInitial.textContent = result.userInfo.name.charAt(0).toUpperCase();
       }
     } else {
-      // User is not authenticated, show login
       loginContainer.style.display = 'block';
       featuresContainer.style.display = 'none';
     }
@@ -43,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loginContainer.style.display = 'none';
         featuresContainer.style.display = 'block';
         
-        // Display user info
         if (response.userInfo && response.userInfo.email) {
           userEmail.textContent = response.userInfo.email;
           userInitial.textContent = response.userInfo.email.charAt(0).toUpperCase();
@@ -70,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
       fetchVideosButton.textContent = originalText;
       
       if (response && response.success) {
-        // Show a success message in the popup
         showSuccessMessage(fetchVideosButton, `${response.count} videos fetched!`);
       } else {
         showErrorMessage('Failed to fetch videos. Please try again.');
@@ -90,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
     exportDataButton.textContent = 'Exporting...';
     
     chrome.runtime.sendMessage({ action: 'exportData' }, (response) => {
-      // Clear timeout to prevent race conditions
       setTimeout(() => {
         exportDataButton.disabled = false;
         exportDataButton.textContent = originalText;
@@ -105,69 +99,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // AI Summary - Direct access to YouTube videos' summaries
+  // AI Summary
   aiSummaryButton && aiSummaryButton.addEventListener('click', () => {
-    try {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const currentTab = tabs[0];
-        if (currentTab && currentTab.url && currentTab.url.includes('youtube.com/watch')) {
-          // We're on a YouTube video page, try to directly summarize it
-          
-          // Get the video ID from the URL
-          const url = new URL(currentTab.url);
-          const videoId = url.searchParams.get('v');
-          
-          if (videoId) {
-            // Show loading UI to user
-            showSuccessMessage(aiSummaryButton, "Working on summary...");
-            
-            // First send a message to show loading in the tab
-            chrome.tabs.sendMessage(currentTab.id, { 
-              action: 'showSummaryLoading', 
-              message: 'Starting transcript extraction...'
-            });
-            
-            // Request transcript extraction and summarization with retries and enhanced error handling
-            chrome.runtime.sendMessage({ 
-              action: 'extractAndSummarizeFromPage',
-              videoId: videoId,
-              videoTitle: currentTab.title?.replace(' - YouTube', '') || 'Unknown Video',
-              attemptTranscriptOpen: true,
-              useGemini25Flash: true // Use the new Gemini 2.5 Flash model
-            }, (response) => {
-              if (chrome.runtime.lastError) {
-                console.error("Error initiating summarization:", chrome.runtime.lastError);
-                // Content script will handle the error display
-              }
-              
-              if (!response || !response.success) {
-                console.error('Summary generation failed:', response?.error);
-                chrome.tabs.sendMessage(currentTab.id, { 
-                  action: 'summaryError', 
-                  error: response?.error || 'Failed to generate summary. Please try again.' 
-                });
-              }
-            });
-          } else {
-            chrome.tabs.sendMessage(currentTab.id, { 
-              action: 'summaryError', 
-              error: 'Could not find video ID' 
-            });
-          }
-          
-          window.close(); // Close the popup
-        } else {
-          // Not on a YouTube video, open dashboard with AI tab
-          chrome.tabs.create({ 
-            url: chrome.runtime.getURL('dashboard.html?tab=ai') 
-          });
-        }
-      });
-    } catch (error) {
-      console.error('Error in AI summary button click:', error);
-      // Fallback to opening dashboard
-      chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html?tab=ai') });
-    }
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const currentTab = tabs[0];
+      
+      if (currentTab && currentTab.url && currentTab.url.includes('youtube.com/watch')) {
+        showSuccessMessage(aiSummaryButton, "Summarization panel is now available on the video page!");
+        window.close();
+      } else {
+        chrome.tabs.create({ 
+          url: chrome.runtime.getURL('dashboard.html?tab=ai') 
+        });
+      }
+    });
   });
 
   // Sign out
@@ -178,22 +123,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // Helper function to show success message
+  // Helper functions
   function showSuccessMessage(element, message) {
     const successMessage = document.createElement('div');
     successMessage.classList.add('success-message');
     successMessage.textContent = message;
     
-    // Insert after the element
     element.parentNode.insertBefore(successMessage, element.nextSibling);
     
-    // Remove after 3 seconds
     setTimeout(() => {
       successMessage.remove();
     }, 3000);
   }
   
-  // Helper function to show error message
   function showErrorMessage(message) {
     const errorMessage = document.createElement('div');
     errorMessage.classList.add('error-message');
@@ -204,11 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
     errorMessage.style.backgroundColor = 'rgba(255,0,0,0.1)';
     errorMessage.textContent = message;
     
-    // Insert at the top of the container that's currently visible
     const container = loginContainer.style.display === 'none' ? featuresContainer : loginContainer;
     container.insertBefore(errorMessage, container.firstChild);
     
-    // Remove after 5 seconds
     setTimeout(() => {
       errorMessage.remove();
     }, 5000);

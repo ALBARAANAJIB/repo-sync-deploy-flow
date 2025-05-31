@@ -3,7 +3,7 @@
   "manifest_version": 3,
   "name": "YouTube Enhancer",
   "version": "1.0.0",
-  "description": "Enhance your YouTube experience with easy liked video management",
+  "description": "Enhance your YouTube experience with easy liked video management and AI-powered summarization",
   "icons": {
     "16": "icons/icon.png",
     "48": "icons/icon.png",
@@ -31,7 +31,8 @@
     "storage",
     "identity",
     "tabs",
-    "downloads"
+    "downloads",
+    "scripting"
   ],
   "oauth2": {
     "client_id": "304162096302-c470kd77du16s0lrlumobc6s8u6uleng.apps.googleusercontent.com",
