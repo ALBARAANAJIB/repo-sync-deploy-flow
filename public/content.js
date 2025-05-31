@@ -593,12 +593,26 @@ function injectLikedVideosButtons() {
     existingButtons.remove();
   }
 
-  // Wait for the play controls to load and find the best insertion point
-  const playControlsSelector = '.ytd-playlist-header-renderer .top-level-buttons';
-  const playControls = document.querySelector(playControlsSelector);
+  // Try multiple selectors to find the right insertion point
+  const selectors = [
+    '.ytd-playlist-header-renderer #top-level-buttons-computed',
+    '.ytd-playlist-header-renderer .top-level-buttons',
+    '#secondary-actions',
+    '.metadata-buttons-container',
+    '.ytd-playlist-header-renderer [role="button"]'
+  ];
   
-  if (!playControls) {
-    console.log('YouTube Enhancer: Play controls not found, retrying...');
+  let insertionPoint = null;
+  for (const selector of selectors) {
+    const element = document.querySelector(selector);
+    if (element) {
+      insertionPoint = element;
+      break;
+    }
+  }
+
+  if (!insertionPoint) {
+    console.log('YouTube Enhancer: Insertion point not found, retrying...');
     setTimeout(injectLikedVideosButtons, 2000);
     return;
   }
@@ -610,7 +624,8 @@ function injectLikedVideosButtons() {
   buttonContainer.style.cssText = `
     display: flex;
     gap: 8px;
-    margin-top: 8px;
+    margin-left: 8px;
+    align-items: center;
     font-family: "Roboto", "Arial", sans-serif;
   `;
 
@@ -621,16 +636,17 @@ function injectLikedVideosButtons() {
       gap: 6px;
       padding: 10px 16px;
       background: rgba(255, 255, 255, 0.1);
-      color: var(--yt-spec-text-primary);
+      color: var(--yt-spec-text-primary, #0f0f0f);
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 18px;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.05, 0, 0, 1);
       font-family: inherit;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
+      white-space: nowrap;
     " 
     onmouseover="this.style.background='rgba(255, 255, 255, 0.15)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.1)'" 
     onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'"
@@ -650,16 +666,17 @@ function injectLikedVideosButtons() {
       gap: 6px;
       padding: 10px 16px;
       background: rgba(255, 255, 255, 0.1);
-      color: var(--yt-spec-text-primary);
+      color: var(--yt-spec-text-primary, #0f0f0f);
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 18px;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.05, 0, 0, 1);
       font-family: inherit;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
+      white-space: nowrap;
     " 
     onmouseover="this.style.background='rgba(255, 255, 255, 0.15)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.1)'" 
     onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'"
@@ -679,16 +696,17 @@ function injectLikedVideosButtons() {
       gap: 6px;
       padding: 10px 16px;
       background: rgba(255, 255, 255, 0.1);
-      color: var(--yt-spec-text-primary);
+      color: var(--yt-spec-text-primary, #0f0f0f);
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 18px;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.05, 0, 0, 1);
       font-family: inherit;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
+      white-space: nowrap;
     " 
     onmouseover="this.style.background='rgba(255, 255, 255, 0.15)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.1)'" 
     onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'"
@@ -703,10 +721,10 @@ function injectLikedVideosButtons() {
     </button>
   `;
 
-  // Insert after the play controls
-  playControls.parentNode.insertBefore(buttonContainer, playControls.nextSibling);
+  // Insert the buttons next to the existing controls
+  insertionPoint.appendChild(buttonContainer);
 
-  // Add event listeners with improved error handling and YouTube-style feedback
+  // Add event listeners with improved error handling and smooth notifications
   const fetchBtn = document.getElementById('fetch-liked-videos');
   const exportBtn = document.getElementById('export-liked-videos');
   const dashboardBtn = document.getElementById('open-dashboard-from-likes');
@@ -728,10 +746,11 @@ function injectLikedVideosButtons() {
             fetchBtn.disabled = false;
             fetchBtn.innerHTML = originalContent;
             
-            // Show elegant notification
-            showYouTubeNotification(
+            // Show smooth notification with dashboard button
+            showSmoothNotification(
               response?.success ? 'Videos fetched successfully!' : 'Failed to fetch videos', 
-              response?.success ? 'success' : 'error'
+              response?.success ? 'success' : 'error',
+              true // Show dashboard button
             );
           }, 1500);
         });
@@ -756,10 +775,11 @@ function injectLikedVideosButtons() {
             exportBtn.disabled = false;
             exportBtn.innerHTML = originalContent;
             
-            // Show elegant notification
-            showYouTubeNotification(
+            // Show smooth notification with dashboard button
+            showSmoothNotification(
               response?.success ? 'Data exported successfully!' : 'Export started', 
-              'success'
+              'success',
+              true // Show dashboard button
             );
           }, 1500);
         });
@@ -772,7 +792,7 @@ function injectLikedVideosButtons() {
       if (window.chrome?.runtime && window.chrome?.tabs) {
         chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
       } else {
-        showYouTubeNotification('This feature requires the Chrome extension', 'error');
+        showSmoothNotification('This feature requires the Chrome extension', 'error');
       }
     });
   }
@@ -780,59 +800,107 @@ function injectLikedVideosButtons() {
   console.log('YouTube Enhancer: Successfully injected YouTube-style liked videos buttons');
 }
 
-// Enhanced YouTube-style notification system
-function showYouTubeNotification(message, type = 'info') {
+// Enhanced smooth notification system for bottom-right corner
+function showSmoothNotification(message, type = 'info', showDashboard = false) {
   // Remove existing notifications
   const existingNotifications = document.querySelectorAll('.yt-enhancer-notification');
   existingNotifications.forEach(notif => notif.remove());
 
   const notification = document.createElement('div');
   notification.className = 'yt-enhancer-notification';
+  
+  const colors = {
+    success: { bg: '#065f46', border: '#10b981' },
+    error: { bg: '#dc2626', border: '#f87171' },
+    info: { bg: '#374151', border: '#9ca3af' }
+  };
+  
+  const currentColors = colors[type] || colors.info;
+  
   notification.style.cssText = `
     position: fixed;
     bottom: 24px;
     right: 24px;
-    background: ${type === 'success' ? '#065f46' : type === 'error' ? '#dc2626' : '#374151'};
+    background: ${currentColors.bg};
     color: white;
-    padding: 12px 16px;
-    border-radius: 8px;
+    padding: 16px 20px;
+    border-radius: 12px;
     font-family: "Roboto", "Arial", sans-serif;
     font-size: 14px;
     font-weight: 500;
     z-index: 10000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     transform: translateX(100%) scale(0.9);
     opacity: 0;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 280px;
     max-width: 320px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid ${currentColors.border};
   `;
   
   const icon = type === 'success' ? 
-    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="20 6 9 17 4 12"/>
     </svg>` :
     type === 'error' ?
-    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10"/>
       <line x1="15" y1="9" x2="9" y2="15"/>
       <line x1="9" y1="9" x2="15" y2="15"/>
     </svg>` :
-    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10"/>
       <path d="m9 12 2 2 4-4"/>
     </svg>`;
   
-  notification.innerHTML = `${icon}<span>${message}</span>`;
+  const dashboardButton = showDashboard ? `
+    <button onclick="
+      if (window.chrome?.runtime && window.chrome?.tabs) {
+        chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
+      }
+      this.closest('.yt-enhancer-notification').remove();
+    " style="
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+    " 
+    onmouseover="this.style.background='rgba(255, 255, 255, 0.25)'"
+    onmouseout="this.style.background='rgba(255, 255, 255, 0.15)'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        <circle cx="9" cy="9" r="2"/>
+        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+      </svg>
+      Open Dashboard
+    </button>
+  ` : '';
+  
+  notification.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 10px;">
+      ${icon}
+      <span style="flex: 1;">${message}</span>
+    </div>
+    ${dashboardButton}
+  `;
   
   document.body.appendChild(notification);
   
-  // Animate in
+  // Smooth animate in
   requestAnimationFrame(() => {
     notification.style.transform = 'translateX(0) scale(1)';
     notification.style.opacity = '1';
@@ -846,8 +914,8 @@ function showYouTubeNotification(message, type = 'info') {
       if (notification.parentNode) {
         notification.parentNode.removeChild(notification);
       }
-    }, 300);
-  }, 3000);
+    }, 400);
+  }, 4000);
 }
 
 // Enhanced initialization function
@@ -908,7 +976,7 @@ playlistObserver.observe(document.body, {
 if (typeof chrome !== 'undefined' && chrome.runtime) {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'showToast') {
-      showYouTubeNotification(message.message, message.type || 'info');
+      showSmoothNotification(message.message, message.type || 'info', message.showDashboard);
     }
     return true;
   });
