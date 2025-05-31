@@ -1,10 +1,10 @@
 
-// This file just re-exports from sonner for compatibility
 import { toast } from "sonner";
 
-// Create a hook that returns the toast function for components that prefer hooks
-const useToast = () => {
-  return toast;
-};
+// Simple re-export of sonner toast for compatibility
+export { toast };
 
-export { useToast, toast };
+// Create a hook that returns the toast function for components that prefer hooks
+export const useToast = () => {
+  return { toast };
+};

@@ -1,3 +1,4 @@
+
 // Enhanced YouTube extension with professional design and advanced long video summarization
 function injectSummarizationPanel() {
   // Check if we're on a YouTube video page
@@ -578,7 +579,7 @@ function showError(contentDiv, loadingDiv, summarizeBtn, errorMessage) {
   summarizeBtn.style.display = 'block';
 }
 
-// Enhanced liked videos page functionality - FIXED VERSION
+// Enhanced liked videos page functionality - RESTORED VERSION
 function injectLikedVideosButtons() {
   // Check if we're on the liked videos page
   if (!window.location.href.includes('youtube.com/playlist?list=LL') && 
@@ -592,28 +593,33 @@ function injectLikedVideosButtons() {
     existingButtons.remove();
   }
 
-  // Try multiple selectors for the playlist header
+  // Try multiple selectors for the playlist header area
   let targetContainer = null;
   const selectors = [
     '#header.ytd-playlist-header-renderer',
-    '.ytd-playlist-header-renderer',
+    '.ytd-playlist-header-renderer #header',
     '#page-header',
     '.page-header-view-model-wiz__page-header-headline',
-    '.immersive-header-content'
+    '.immersive-header-content',
+    '.ytd-playlist-header-renderer',
+    '#contents.ytd-playlist-video-list-renderer'
   ];
 
   for (const selector of selectors) {
     targetContainer = document.querySelector(selector);
-    if (targetContainer) break;
+    if (targetContainer) {
+      console.log('YouTube Enhancer: Found target container with selector:', selector);
+      break;
+    }
   }
 
   if (!targetContainer) {
-    console.log('YouTube Enhancer: Retrying to find playlist header...');
+    console.log('YouTube Enhancer: No target container found, retrying...');
     setTimeout(injectLikedVideosButtons, 2000);
     return;
   }
 
-  console.log('YouTube Enhancer: Found target container, injecting buttons');
+  console.log('YouTube Enhancer: Injecting liked videos buttons');
 
   const buttonContainer = document.createElement('div');
   buttonContainer.id = 'youtube-enhancer-liked-buttons';
@@ -621,13 +627,13 @@ function injectLikedVideosButtons() {
     <div style="
       display: flex;
       gap: 12px;
-      margin-top: 16px;
-      margin-bottom: 8px;
+      margin: 16px 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
-      padding: 12px;
+      padding: 16px;
       background: #f9fafb;
       border-radius: 8px;
       border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     ">
       <div style="
         display: flex;
@@ -728,9 +734,14 @@ function injectLikedVideosButtons() {
     </div>
   `;
 
-  targetContainer.appendChild(buttonContainer);
+  // Insert at the beginning of the target container
+  if (targetContainer.children.length > 0) {
+    targetContainer.insertBefore(buttonContainer, targetContainer.children[0]);
+  } else {
+    targetContainer.appendChild(buttonContainer);
+  }
 
-  // Add event listeners with better error handling
+  // Add event listeners with improved error handling
   const fetchBtn = document.getElementById('fetch-liked-videos');
   const exportBtn = document.getElementById('export-liked-videos');
   const dashboardBtn = document.getElementById('open-dashboard-from-likes');
@@ -752,6 +763,9 @@ function injectLikedVideosButtons() {
               </svg>
               Fetch Videos
             `;
+            
+            // Show toast notification
+            showToast(response?.success ? 'Videos fetched successfully!' : 'Failed to fetch videos', response?.success ? 'success' : 'error');
           }, 2000);
         });
       }
@@ -775,6 +789,9 @@ function injectLikedVideosButtons() {
               </svg>
               Export Data
             `;
+            
+            // Show toast notification
+            showToast(response?.success ? 'Data exported successfully!' : 'Export started', 'success');
           }, 2000);
         });
       }
@@ -783,13 +800,54 @@ function injectLikedVideosButtons() {
 
   if (dashboardBtn) {
     dashboardBtn.addEventListener('click', () => {
-      if (window.chrome?.runtime) {
+      if (window.chrome?.runtime && window.chrome?.tabs) {
         chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
+      } else {
+        showToast('This feature requires the Chrome extension', 'error');
       }
     });
   }
 
   console.log('YouTube Enhancer: Successfully injected liked videos buttons');
+}
+
+// Simple toast notification function for the content script
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#6b7280'};
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  `;
+  toast.textContent = message;
+  
+  document.body.appendChild(toast);
+  
+  // Animate in
+  setTimeout(() => {
+    toast.style.transform = 'translateX(0)';
+  }, 100);
+  
+  // Auto remove
+  setTimeout(() => {
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }, 3000);
 }
 
 // Enhanced initialization function
@@ -846,9 +904,12 @@ playlistObserver.observe(document.body, {
   subtree: true
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'showToast') {
-    // Handle any toast messages if needed
-  }
-  return true;
-});
+// Handle messages from the extension
+if (typeof chrome !== 'undefined' && chrome.runtime) {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'showToast') {
+      showToast(message.message, message.type || 'info');
+    }
+    return true;
+  });
+}
