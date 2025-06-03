@@ -1,11 +1,5 @@
-// Enhanced YouTube extension with Phase 1-5 security improvements
-import ContentScriptManager from '../src/utils/contentScriptManager.js';
-import SecureApiManager from '../src/utils/secureApiManager.js';
 
-// Phase 4: Security managers
-const contentManager = ContentScriptManager.getInstance();
-const secureApi = SecureApiManager.getInstance();
-
+// Enhanced YouTube extension with security improvements
 // Phase 4: Enhanced Security Class
 class ExtensionSecurity {
   constructor() {
@@ -56,6 +50,14 @@ class ExtensionSecurity {
       return false;
     }
   }
+
+  validateYouTubeUrl(url) {
+    try {
+      return url && url.includes('youtube.com/watch');
+    } catch {
+      return false;
+    }
+  }
 }
 
 // Phase 5: Performance Monitor
@@ -85,10 +87,11 @@ class PerformanceMonitor {
 const security = new ExtensionSecurity();
 const performanceMonitor = new PerformanceMonitor();
 
-// Phase 3: Enhanced injection with collision detection and retry logic
+// Enhanced injection with collision detection and retry logic
 function injectSummarizationPanel() {
   // Check if we're on a YouTube video page
   if (!window.location.href.includes('youtube.com/watch')) {
+    console.log('Not on a YouTube video page');
     return;
   }
 
@@ -104,13 +107,16 @@ function injectSummarizationPanel() {
   
   function attemptInjection() {
     try {
-      // Try multiple selectors for the secondary column
+      console.log(`Attempting injection... retry ${retryCount + 1}/${maxRetries}`);
+      
+      // Try multiple selectors for the secondary column with more specific targeting
       const selectors = [
         '#secondary #secondary-inner',
         '#secondary',
         'ytd-watch-flexy[role="main"] #secondary',
         '#columns #secondary-inner',
-        'ytd-secondary-column-video-list-renderer'
+        'ytd-secondary-column-video-list-renderer',
+        '#related'
       ];
       
       let secondaryColumn = null;
@@ -135,7 +141,8 @@ function injectSummarizationPanel() {
       // Check if the page has finished loading the initial content
       const hasContent = document.querySelector('ytd-watch-metadata') || 
                         document.querySelector('#above-the-fold') ||
-                        document.querySelector('#primary');
+                        document.querySelector('#primary') ||
+                        document.querySelector('#player');
       
       if (!hasContent && retryCount < maxRetries) {
         retryCount++;
@@ -312,12 +319,12 @@ function injectSummarizationPanel() {
         const detailLevel = detailLevelSelect.value;
         
         // Security: Validate URL and rate limit
-        if (!secureApi.validateYouTubeUrl(currentUrl)) {
+        if (!security.validateYouTubeUrl(currentUrl)) {
           showError(contentDiv, loadingDiv, summarizeBtn, 'Invalid YouTube URL');
           return;
         }
         
-        if (!secureApi.checkRateLimit('summarize_click', 3, 60000)) {
+        if (!security.checkRateLimit('summarize_click', 3, 60000)) {
           showError(contentDiv, loadingDiv, summarizeBtn, 'Please wait before requesting another summary');
           return;
         }
@@ -748,7 +755,7 @@ function showError(contentDiv, loadingDiv, summarizeBtn, errorMessage) {
   summarizeBtn.style.display = 'block';
 }
 
-// Phase 3: Enhanced liked videos injection with collision detection
+// Enhanced liked videos injection with collision detection
 function injectLikedVideosButtons() {
   // Check if we're on the liked videos page
   if (!window.location.href.includes('youtube.com/playlist?list=LL') && 
@@ -879,7 +886,7 @@ function injectLikedVideosButtons() {
 
       if (fetchBtn) {
         fetchBtn.addEventListener('click', () => {
-          if (!secureApi.checkRateLimit('fetch_click', 2, 30000)) {
+          if (!security.checkRateLimit('fetch_click', 2, 30000)) {
             showEnhancedNotification('Please wait before fetching again', 'error', false);
             return;
           }
@@ -910,7 +917,7 @@ function injectLikedVideosButtons() {
 
       if (exportBtn) {
         exportBtn.addEventListener('click', () => {
-          if (!secureApi.checkRateLimit('export_click', 2, 30000)) {
+          if (!security.checkRateLimit('export_click', 2, 30000)) {
             showEnhancedNotification('Please wait before exporting again', 'error', false);
             return;
           }
@@ -1049,17 +1056,18 @@ function showEnhancedNotification(message, type = 'info', showDashboard = false)
   }, 4000);
 }
 
-// Phase 3: Enhanced initialization with proper injection logic
+// Enhanced initialization with proper injection logic
 function initializeExtension() {
   const currentUrl = window.location.href;
+  console.log('Initializing extension for URL:', currentUrl);
   
   try {
     if (currentUrl.includes('youtube.com/watch')) {
-      // Fix: Call function directly instead of passing it to contentManager
+      console.log('Detected video page, injecting summarization panel...');
       injectSummarizationPanel();
     } else if (currentUrl.includes('youtube.com/playlist?list=LL') || 
                currentUrl.includes('youtube.com/feed/likes')) {
-      // Fix: Call function directly instead of passing it to contentManager
+      console.log('Detected liked videos page, injecting buttons...');
       injectLikedVideosButtons();
     }
   } catch (error) {
@@ -1084,7 +1092,7 @@ if (document.readyState === 'loading') {
   setTimeout(initializeExtension, 2000);
 }
 
-// Phase 3: Enhanced SPA navigation detection with cleanup
+// Enhanced SPA navigation detection with cleanup
 let currentUrl = window.location.href;
 let navigationTimeout = null;
 
@@ -1116,7 +1124,7 @@ function setupNavigationDetection() {
   });
 }
 
-// Phase 3: Cleanup function to prevent duplicates
+// Cleanup function to prevent duplicates
 function cleanupExistingElements() {
   try {
     const existingPanel = document.getElementById('youtube-enhancer-panel');
@@ -1136,8 +1144,6 @@ function cleanupExistingElements() {
 }
 
 setupNavigationDetection();
-
-// ... keep existing code for message handling and CSS animations
 
 // Handle messages from the extension
 if (typeof chrome !== 'undefined' && chrome.runtime) {
