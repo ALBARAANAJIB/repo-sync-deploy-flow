@@ -100,61 +100,94 @@ function injectSummarizationPanel() {
   }
 
   let retryCount = 0;
-  const maxRetries = 3;
+  const maxRetries = 5;
   
   function attemptInjection() {
     try {
-      const secondaryColumn = document.querySelector('#secondary');
+      // Try multiple selectors for the secondary column
+      const selectors = [
+        '#secondary #secondary-inner',
+        '#secondary',
+        'ytd-watch-flexy[role="main"] #secondary',
+        '#columns #secondary-inner',
+        'ytd-secondary-column-video-list-renderer'
+      ];
+      
+      let secondaryColumn = null;
+      for (const selector of selectors) {
+        secondaryColumn = document.querySelector(selector);
+        if (secondaryColumn) {
+          console.log(`Found secondary column with selector: ${selector}`);
+          break;
+        }
+      }
+      
       if (!secondaryColumn) {
         retryCount++;
         if (retryCount < maxRetries) {
           console.log(`Injection retry ${retryCount}/${maxRetries} - secondary column not found`);
-          setTimeout(attemptInjection, 1000 * retryCount); // Exponential backoff
+          setTimeout(attemptInjection, 1000 + (retryCount * 500)); // Progressive delay
           return;
         }
         throw new Error('Secondary column not found after retries');
       }
 
+      // Check if the page has finished loading the initial content
+      const hasContent = document.querySelector('ytd-watch-metadata') || 
+                        document.querySelector('#above-the-fold') ||
+                        document.querySelector('#primary');
+      
+      if (!hasContent && retryCount < maxRetries) {
+        retryCount++;
+        console.log(`Waiting for page content to load... retry ${retryCount}`);
+        setTimeout(attemptInjection, 1000);
+        return;
+      }
+
       // Create the professional summarization panel
       const panel = document.createElement('div');
       panel.id = 'youtube-enhancer-panel';
+      panel.style.cssText = `
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 1;
+      `;
+      
       panel.innerHTML = `
         <div style="
-          background: #ffffff;
+          background: var(--yt-spec-base-background, #ffffff);
           border-radius: 12px;
-          margin-bottom: 16px;
           overflow: hidden;
-          border: 1px solid #e5e7eb;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          border: 1px solid var(--yt-spec-10-percent-layer, #e5e7eb);
+          font-family: Roboto, Arial, sans-serif;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         ">
           <!-- Professional Header -->
           <div style="
-            background: #f9fafb;
+            background: var(--yt-spec-raised-background, #f9fafb);
             padding: 16px 20px;
             display: flex;
             align-items: center;
             gap: 10px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--yt-spec-10-percent-layer, #e5e7eb);
           ">
             <div style="
               width: 20px;
               height: 20px;
-              background: #f3f4f6;
+              background: var(--yt-spec-icon-inactive, #606060);
               border-radius: 4px;
               display: flex;
               align-items: center;
               justify-content: center;
               font-size: 10px;
-              color: #374151;
+              color: var(--yt-spec-base-background, #ffffff);
               font-weight: 600;
-              border: 1px solid #d1d5db;
             ">AI</div>
             <h3 style="
               margin: 0;
               font-size: 14px;
-              font-weight: 600;
-              color: #111827;
+              font-weight: 500;
+              color: var(--yt-spec-text-primary, #0f0f0f);
               letter-spacing: -0.025em;
             ">Video Summary</h3>
           </div>
@@ -166,11 +199,11 @@ function injectSummarizationPanel() {
               <select id="detail-level" style="
                 width: 100%;
                 padding: 10px 14px;
-                border: 1px solid #d1d5db;
-                border-radius: 8px;
+                border: 1px solid var(--yt-spec-10-percent-layer, #ccc);
+                border-radius: 4px;
                 font-size: 13px;
-                background: #ffffff;
-                color: #111827;
+                background: var(--yt-spec-base-background, #ffffff);
+                color: var(--yt-spec-text-primary, #0f0f0f);
                 cursor: pointer;
                 transition: all 0.2s ease;
                 font-family: inherit;
@@ -187,12 +220,12 @@ function injectSummarizationPanel() {
             
             <button id="summarize-video-btn" style="
               width: 100%;
-              background: #f9fafb;
-              color: #374151;
-              border: 1px solid #d1d5db;
-              border-radius: 8px;
-              padding: 12px 16px;
-              font-size: 13px;
+              background: var(--yt-spec-call-to-action, #065fd4);
+              color: var(--yt-spec-text-primary-inverse, #ffffff);
+              border: none;
+              border-radius: 18px;
+              padding: 10px 16px;
+              font-size: 14px;
               font-weight: 500;
               cursor: pointer;
               transition: all 0.2s ease;
@@ -203,11 +236,10 @@ function injectSummarizationPanel() {
               margin-bottom: 16px;
               font-family: inherit;
               letter-spacing: -0.025em;
-            " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" 
-               onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#d1d5db'">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0-2.83l-.06.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            " onmouseover="this.style.background='var(--yt-spec-call-to-action-hover, #0a5bc7)'" 
+               onmouseout="this.style.background='var(--yt-spec-call-to-action, #065fd4)'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
               </svg>
               <span>Generate Summary</span>
             </button>
@@ -216,31 +248,31 @@ function injectSummarizationPanel() {
               display: none;
               text-align: center;
               padding: 24px;
-              background: #f9fafb;
+              background: var(--yt-spec-raised-background, #f9fafb);
               border-radius: 8px;
-              border: 1px solid #f3f4f6;
+              border: 1px solid var(--yt-spec-10-percent-layer, #f3f4f6);
             ">
               <div style="
                 width: 16px;
                 height: 16px;
-                border: 2px solid #f3f4f6;
-                border-top: 2px solid #6b7280;
+                border: 2px solid var(--yt-spec-10-percent-layer, #f3f4f6);
+                border-top: 2px solid var(--yt-spec-call-to-action, #065fd4);
                 border-radius: 50%;
                 animation: spin 1s linear infinite;
                 margin: 0 auto 12px;
               "></div>
               <div style="
                 font-size: 12px; 
-                color: #6b7280;
+                color: var(--yt-spec-text-secondary, #606060);
                 font-weight: 400;
               " id="loading-message">Analyzing video content...</div>
             </div>
             
             <div id="summary-content" style="
               display: none;
-              background: #ffffff;
+              background: var(--yt-spec-base-background, #ffffff);
               border-radius: 8px;
-              border: 1px solid #f3f4f6;
+              border: 1px solid var(--yt-spec-10-percent-layer, #f3f4f6);
               overflow: hidden;
             "></div>
           </div>
@@ -254,14 +286,19 @@ function injectSummarizationPanel() {
           
           #detail-level:focus {
             outline: none;
-            border-color: #6b7280;
-            box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+            border-color: var(--yt-spec-call-to-action, #065fd4);
+            box-shadow: 0 0 0 2px rgba(6, 95, 212, 0.2);
           }
         </style>
       `;
 
       // Insert the panel at the top of the secondary column
-      secondaryColumn.insertBefore(panel, secondaryColumn.firstChild);
+      const firstChild = secondaryColumn.firstElementChild;
+      if (firstChild) {
+        secondaryColumn.insertBefore(panel, firstChild);
+      } else {
+        secondaryColumn.appendChild(panel);
+      }
 
       // Add event listeners with security measures
       const summarizeBtn = document.getElementById('summarize-video-btn');
@@ -311,7 +348,8 @@ function injectSummarizationPanel() {
     }
   }
   
-  attemptInjection();
+  // Initial injection with a slight delay to ensure page elements are loaded
+  setTimeout(attemptInjection, 500);
 }
 
 // Enhanced prompts specifically designed for long video analysis like Google AI Studio
