@@ -1,4 +1,3 @@
-
 // Enhanced YouTube extension with security improvements
 // Phase 4: Enhanced Security Class
 class ExtensionSecurity {
@@ -89,75 +88,79 @@ const performanceMonitor = new PerformanceMonitor();
 
 // Enhanced injection with collision detection and retry logic
 function injectSummarizationPanel() {
+  console.log('🎯 Starting injection process...');
+  
   // Check if we're on a YouTube video page
   if (!window.location.href.includes('youtube.com/watch')) {
-    console.log('Not on a YouTube video page');
+    console.log('❌ Not on a YouTube video page');
     return;
   }
+
+  console.log('✅ On YouTube video page, proceeding with injection...');
 
   // Collision detection - prevent duplicates
   const existingPanel = document.getElementById('youtube-enhancer-panel');
   if (existingPanel) {
-    console.log('Panel already exists, skipping injection');
-    return;
+    console.log('⚠️ Panel already exists, removing old one...');
+    existingPanel.remove();
   }
 
   let retryCount = 0;
-  const maxRetries = 5;
+  const maxRetries = 8;
   
   function attemptInjection() {
     try {
-      console.log(`Attempting injection... retry ${retryCount + 1}/${maxRetries}`);
+      console.log(`🔄 Attempting injection... retry ${retryCount + 1}/${maxRetries}`);
       
-      // Try multiple selectors for the secondary column with more specific targeting
+      // Wait for YouTube's UI to be ready
+      const ytdWatchFlexy = document.querySelector('ytd-watch-flexy');
+      if (!ytdWatchFlexy) {
+        throw new Error('YouTube watch page not ready');
+      }
+
+      // More comprehensive selectors for the secondary column
       const selectors = [
+        'ytd-watch-flexy #secondary #secondary-inner',
+        'ytd-watch-flexy #secondary',
+        'ytd-secondary-column-video-list-renderer',
         '#secondary #secondary-inner',
         '#secondary',
-        'ytd-watch-flexy[role="main"] #secondary',
-        '#columns #secondary-inner',
-        'ytd-secondary-column-video-list-renderer',
-        '#related'
+        '#related',
+        'ytd-watch-flexy[role="main"] #secondary'
       ];
       
       let secondaryColumn = null;
       for (const selector of selectors) {
         secondaryColumn = document.querySelector(selector);
         if (secondaryColumn) {
-          console.log(`Found secondary column with selector: ${selector}`);
+          console.log(`✅ Found secondary column with selector: ${selector}`);
           break;
         }
       }
       
       if (!secondaryColumn) {
-        retryCount++;
-        if (retryCount < maxRetries) {
-          console.log(`Injection retry ${retryCount}/${maxRetries} - secondary column not found`);
-          setTimeout(attemptInjection, 1000 + (retryCount * 500)); // Progressive delay
-          return;
-        }
-        throw new Error('Secondary column not found after retries');
+        throw new Error('Secondary column not found');
       }
 
-      // Check if the page has finished loading the initial content
-      const hasContent = document.querySelector('ytd-watch-metadata') || 
-                        document.querySelector('#above-the-fold') ||
-                        document.querySelector('#primary') ||
-                        document.querySelector('#player');
+      // Ensure the secondary column has some content or structure
+      const hasSecondaryContent = secondaryColumn.children.length > 0 || 
+                                  document.querySelector('ytd-watch-metadata') ||
+                                  document.querySelector('#above-the-fold');
       
-      if (!hasContent && retryCount < maxRetries) {
-        retryCount++;
-        console.log(`Waiting for page content to load... retry ${retryCount}`);
-        setTimeout(attemptInjection, 1000);
-        return;
+      if (!hasSecondaryContent && retryCount < maxRetries - 1) {
+        throw new Error('Secondary column content not ready');
       }
 
-      // Create the professional summarization panel
+      // Create the AI summary panel
       const panel = document.createElement('div');
       panel.id = 'youtube-enhancer-panel';
       panel.style.cssText = `
         margin-bottom: 16px;
         position: relative;
         z-index: 1;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease-out;
       `;
       
       panel.innerHTML = `
@@ -307,6 +310,12 @@ function injectSummarizationPanel() {
         secondaryColumn.appendChild(panel);
       }
 
+      // Animate in
+      requestAnimationFrame(() => {
+        panel.style.opacity = '1';
+        panel.style.transform = 'translateY(0)';
+      });
+
       // Add event listeners with security measures
       const summarizeBtn = document.getElementById('summarize-video-btn');
       const loadingDiv = document.getElementById('summary-loading');
@@ -345,18 +354,25 @@ function injectSummarizationPanel() {
         });
       });
       
-      console.log('YouTube enhancer panel injected successfully');
+      console.log('🎉 YouTube enhancer panel injected successfully!');
+      return true;
+      
     } catch (error) {
-      console.error('Panel injection failed:', error);
+      console.error('❌ Panel injection failed:', error.message);
       retryCount++;
       if (retryCount < maxRetries) {
-        setTimeout(attemptInjection, 1000 * retryCount);
+        const delay = Math.min(1000 * Math.pow(1.5, retryCount), 5000);
+        console.log(`⏰ Retrying in ${delay}ms...`);
+        setTimeout(attemptInjection, delay);
+      } else {
+        console.error('🚫 Max retries reached, injection failed permanently');
       }
+      return false;
     }
   }
   
-  // Initial injection with a slight delay to ensure page elements are loaded
-  setTimeout(attemptInjection, 500);
+  // Start injection with initial delay
+  setTimeout(attemptInjection, 1000);
 }
 
 // Enhanced prompts specifically designed for long video analysis like Google AI Studio
@@ -1059,25 +1075,25 @@ function showEnhancedNotification(message, type = 'info', showDashboard = false)
 // Enhanced initialization with proper injection logic
 function initializeExtension() {
   const currentUrl = window.location.href;
-  console.log('Initializing extension for URL:', currentUrl);
+  console.log('🚀 Initializing extension for URL:', currentUrl);
   
   try {
     if (currentUrl.includes('youtube.com/watch')) {
-      console.log('Detected video page, injecting summarization panel...');
+      console.log('🎬 Detected video page, injecting summarization panel...');
       injectSummarizationPanel();
     } else if (currentUrl.includes('youtube.com/playlist?list=LL') || 
                currentUrl.includes('youtube.com/feed/likes')) {
-      console.log('Detected liked videos page, injecting buttons...');
+      console.log('❤️ Detected liked videos page, injecting buttons...');
       injectLikedVideosButtons();
     }
   } catch (error) {
-    console.error('Extension initialization error:', error);
+    console.error('❌ Extension initialization error:', error);
     // Retry after delay if injection fails
     setTimeout(() => {
       try {
         initializeExtension();
       } catch (retryError) {
-        console.error('Extension retry failed:', retryError);
+        console.error('❌ Extension retry failed:', retryError);
       }
     }, 2000);
   }
@@ -1086,10 +1102,10 @@ function initializeExtension() {
 // Initialize when page loads
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(initializeExtension, 2000);
+    setTimeout(initializeExtension, 1000);
   });
 } else {
-  setTimeout(initializeExtension, 2000);
+  setTimeout(initializeExtension, 1000);
 }
 
 // Enhanced SPA navigation detection with cleanup
@@ -1101,7 +1117,7 @@ function setupNavigationDetection() {
   // Method 1: URL change monitoring via MutationObserver
   const observer = new MutationObserver(() => {
     if (window.location.href !== currentUrl) {
-      console.log('Navigation detected:', currentUrl, '->', window.location.href);
+      console.log('🔄 Navigation detected:', currentUrl, '->', window.location.href);
       currentUrl = window.location.href;
       
       // Cleanup existing elements before re-injection
@@ -1109,7 +1125,7 @@ function setupNavigationDetection() {
       
       // Debounced re-initialization
       if (navigationTimeout) clearTimeout(navigationTimeout);
-      navigationTimeout = setTimeout(initializeExtension, 2000);
+      navigationTimeout = setTimeout(initializeExtension, 1500);
     }
   });
   
@@ -1117,7 +1133,7 @@ function setupNavigationDetection() {
 
   // Method 2: PopState event for browser navigation
   window.addEventListener('popstate', () => {
-    console.log('Navigation detected via popstate');
+    console.log('🔄 Navigation detected via popstate');
     cleanupExistingElements();
     if (navigationTimeout) clearTimeout(navigationTimeout);
     navigationTimeout = setTimeout(initializeExtension, 1000);
@@ -1130,16 +1146,16 @@ function cleanupExistingElements() {
     const existingPanel = document.getElementById('youtube-enhancer-panel');
     if (existingPanel) {
       existingPanel.remove();
-      console.log('Cleaned up existing panel');
+      console.log('🧹 Cleaned up existing panel');
     }
     
     const existingButtons = document.getElementById('youtube-enhancer-liked-buttons');
     if (existingButtons) {
       existingButtons.remove();
-      console.log('Cleaned up existing buttons');
+      console.log('🧹 Cleaned up existing buttons');
     }
   } catch (error) {
-    console.error('Cleanup error:', error);
+    console.error('❌ Cleanup error:', error);
   }
 }
 
