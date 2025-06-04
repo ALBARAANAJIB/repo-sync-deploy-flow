@@ -32,7 +32,6 @@ export default defineConfig(({ mode }) => ({
         index: 'index.html',
         popup: 'public/popup.html',
         dashboard: 'public/dashboard.html',
-        content: 'public/content.js',
       },
     }
   }
