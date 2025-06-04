@@ -1,37 +1,32 @@
 
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
 import { crx } from '@crxjs/vite-plugin'
-import manifestJson from './public/manifest.json'
-import { componentTagger } from "lovable-tagger"
+import path from 'path'
+import manifest from './public/manifest.json'
 
-const manifest = manifestJson as any;
-
-export default defineConfig(({mode}) => ({
+// https://vitejs.dev/config/
+export default defineConfig({
   plugins: [
     react(),
-    mode === 'development' && componentTagger(),
-    crx({ manifest }),
-  ].filter(Boolean),
+    crx({
+      manifest: manifest as any
+    })
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
   server: {
-    port: 8080,
-    host: "::",
+    port: 8080
   },
   build: {
-    outDir: 'dist',
     rollupOptions: {
       input: {
-        index: 'index.html',
         popup: 'public/popup.html',
-        dashboard: 'public/dashboard.html',
-        content: 'public/content.js',
-      },
+        dashboard: 'public/dashboard.html'
+      }
     }
   }
-}))
+})

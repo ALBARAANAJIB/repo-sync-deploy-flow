@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { MessageSquareText, Youtube, CirclePlay } from "lucide-react";
-import { checkGeminiAccess } from "@/utils/geminiUtils";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -13,7 +11,6 @@ const Index = () => {
   const [apiKeySet, setApiKeySet] = useState(true); // Set to true since we use a fixed key now
   const [showApiKeyForm, setShowApiKeyForm] = useState(false);
   const [aiModel, setAiModel] = useState('standard');
-  const [geminiAvailable, setGeminiAvailable] = useState(false);
 
   useEffect(() => {
     // Check if this is running in a Chrome extension context
@@ -27,18 +24,13 @@ const Index = () => {
           setUserEmail(result.userInfo.email || '');
         }
         
-        // API key is now fixed in the code
+        // API key is now fixed in the code (AIzaSyDxQpk6jmBsM5lsGdzRJKokQkwSVTk5sRg)
         setApiKeySet(true);
         setShowApiKeyForm(false);
         
         if (result.aiModel) {
           setAiModel(result.aiModel);
         }
-        
-        // Check if Gemini is accessible
-        checkGeminiAccess().then(available => {
-          setGeminiAvailable(available);
-        });
         
         setIsLoading(false);
       });
@@ -219,36 +211,30 @@ const Index = () => {
                       <div>
                         <h3 className="text-lg font-medium text-gray-900 mb-1">Smart Video Summaries</h3>
                         <p className="text-sm text-gray-600 mb-4">
-                          Get instant AI-generated summaries of any YouTube video using Gemini 2.5 Flash technology.
+                          Get instant AI-generated summaries of any YouTube video in the video's original language.
                         </p>
                         <p className="text-xs text-gray-500 mb-4">
-                          This feature adds a "Summarize Video" button to YouTube video pages and provides intelligent bullet-point summaries.
+                          This feature adds a "Summarize Video" button to YouTube video pages and provides intelligent summaries in Arabic, English, Spanish, German, and more.
                         </p>
                         
                         <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-700 mb-2">Choose summarization mode:</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            <Button
-                              variant={aiModel === "standard" ? "default" : "outline"} 
-                              size="sm"
-                              onClick={() => handleSaveAiModel("standard")}
-                              className="justify-start"
-                            >
-                              <CirclePlay className="h-4 w-4 mr-2" />
-                              Standard
-                              <span className="ml-auto text-xs opacity-70">Faster</span>
-                            </Button>
+                          <p className="text-sm font-medium text-gray-700 mb-2">Available summarization modes:</p>
+                          <div className="grid grid-cols-1 gap-2">
+                            <div className="flex items-center justify-between p-2 bg-white rounded border">
+                              <div>
+                                <div className="font-medium text-sm">Quick Summary</div>
+                                <div className="text-xs text-gray-500">2-3 min read • Brief overview</div>
+                              </div>
+                              <CirclePlay className="h-4 w-4 text-green-500" />
+                            </div>
                             
-                            <Button
-                              variant={aiModel === "advanced" ? "default" : "outline"}
-                              size="sm" 
-                              onClick={() => handleSaveAiModel("advanced")}
-                              className="justify-start"
-                            >
-                              <CirclePlay className="h-4 w-4 mr-2" />
-                              Advanced
-                              <span className="ml-auto text-xs opacity-70">Better</span>
-                            </Button>
+                            <div className="flex items-center justify-between p-2 bg-white rounded border">
+                              <div>
+                                <div className="font-medium text-sm">Detailed Summary</div>
+                                <div className="text-xs text-gray-500">5-7 min read • Comprehensive analysis</div>
+                              </div>
+                              <CirclePlay className="h-4 w-4 text-blue-500" />
+                            </div>
                           </div>
                         </div>
                         
@@ -258,21 +244,14 @@ const Index = () => {
                             className="w-full"
                             onClick={() => {
                               toast("AI Summary Feature Active", 
-                                { description: "You'll see the 'Summarize Video' panel on YouTube videos." });
+                                { description: "You'll see the summarization panel on YouTube videos with 2 reliable modes." });
                             }}
                           >
                             Summarize Videos with Gemini
                           </Button>
                           
-                          <div className={`text-xs p-2 rounded-md border ${
-                            geminiAvailable 
-                              ? 'text-emerald-700 bg-emerald-50 border-emerald-100'
-                              : 'text-amber-700 bg-amber-50 border-amber-100'
-                          }`}>
-                            {geminiAvailable 
-                              ? "Gemini 2.5 Flash model ready for fast video summaries!"
-                              : "Checking Gemini API connection..."
-                            }
+                          <div className="text-xs p-2 rounded-md border text-emerald-700 bg-emerald-50 border-emerald-100">
+                            ✨ Simplified with 2 reliable modes for consistent language detection!
                           </div>
                         </div>
                       </div>
@@ -280,12 +259,12 @@ const Index = () => {
                   </div>
                   
                   <div className="bg-gray-50 p-4 rounded border border-gray-200 mt-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Coming soon:</h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Recent improvements:</h4>
                     <ul className="text-xs text-gray-600 space-y-2 list-disc pl-5">
-                      <li>Batch summarization of multiple videos</li>
-                      <li>Custom summary formats and lengths</li>
-                      <li>Topic extraction and keyword analysis</li>
-                      <li>Video recommendations based on your interests</li>
+                      <li>Simplified to 2 reliable summarization modes</li>
+                      <li>Ultra-consistent language detection and matching</li>
+                      <li>Better handling of long videos (40+ minutes)</li>
+                      <li>Removed problematic prompts causing mixed languages</li>
                     </ul>
                   </div>
                 </TabsContent>
