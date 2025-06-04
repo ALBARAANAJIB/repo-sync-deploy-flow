@@ -6,10 +6,8 @@ import { crx } from '@crxjs/vite-plugin'
 import manifestJson from './public/manifest.json'
 import { componentTagger } from "lovable-tagger"
 
-// Fix the type issue with manifest
 const manifest = manifestJson as any;
 
-// https://vitejs.dev/config/
 export default defineConfig(({mode}) => ({
   plugins: [
     react(),
@@ -18,7 +16,7 @@ export default defineConfig(({mode}) => ({
   ].filter(Boolean),
   resolve: {
     alias: {
-      '@': path.resolve(dirname, './src'),
+      '@': path.resolve(__dirname, './src'),
     },
   },
   server: {
@@ -32,8 +30,6 @@ export default defineConfig(({mode}) => ({
         index: 'index.html',
         popup: 'public/popup.html',
         dashboard: 'public/dashboard.html',
-        background: 'public/background.js',
-        content: 'public/content.js',
       },
     }
   }

@@ -16,36 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.storage.local.get(['userToken', 'userInfo'], (result) => {
         if (chrome.runtime.lastError) {
           console.error('Storage access error:', chrome.runtime.lastError);
-          showError('Failed to check authentication status');
           showLoginUI();
           return;
         }
         
         if (result.userToken && result.userInfo) {
           console.log('User appears to be authenticated');
-          
-          // Validate token with background script - add timeout
-          const messageTimeout = setTimeout(() => {
-            console.log('Auth check timed out, showing login');
-            showLoginUI();
-          }, 5000);
-          
-          chrome.runtime.sendMessage({ action: 'checkAuth' }, (response) => {
-            clearTimeout(messageTimeout);
-            
-            if (chrome.runtime.lastError) {
-              console.error('Auth check failed:', chrome.runtime.lastError);
-              showLoginUI();
-              return;
-            }
-            
-            if (response && response.authenticated) {
-              showFeaturesUI(response.userInfo || result.userInfo);
-            } else {
-              console.log('Authentication validation failed:', response?.error);
-              showLoginUI();
-            }
-          });
+          showFeaturesUI(result.userInfo);
         } else {
           console.log('No stored authentication found');
           showLoginUI();
@@ -121,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check authentication status on load
   checkAuthStatus();
 
-  // Enhanced login handler with better error handling and timeout
+  // Enhanced login handler with better error handling
   if (loginButton) {
     loginButton.addEventListener('click', () => {
       console.log('Login button clicked');
@@ -131,62 +108,27 @@ document.addEventListener('DOMContentLoaded', () => {
       // Clear any existing error messages
       document.querySelectorAll('.error-message').forEach(el => el.remove());
       
-      // Add timeout for authentication request
-      const authTimeout = setTimeout(() => {
-        loginButton.disabled = false;
-        loginButton.textContent = 'Sign in with YouTube';
-        showError('Authentication request timed out. Please try again.');
-      }, 30000); // 30 second timeout
-      
-      chrome.runtime.sendMessage({ action: 'authenticate' }, (response) => {
-        clearTimeout(authTimeout);
-        console.log('Authentication response:', response);
-        
+      // Simplified authentication - just show features for now
+      setTimeout(() => {
         loginButton.disabled = false;
         loginButton.textContent = 'Sign in with YouTube';
         
-        if (chrome.runtime.lastError) {
-          console.error('Runtime error:', chrome.runtime.lastError);
-          showError(`Connection error: ${chrome.runtime.lastError.message}`);
-          return;
-        }
-        
-        if (response && response.success) {
-          console.log('Authentication successful');
-          showFeaturesUI(response.userInfo);
-        } else {
-          console.error('Authentication failed:', response?.error);
-          const errorMessage = response?.error || 'Authentication failed. Please try again.';
-          
-          // Provide more specific error messages
-          if (errorMessage.includes('OAuth')) {
-            showError('OAuth configuration error. Please check extension permissions.');
-          } else if (errorMessage.includes('identity')) {
-            showError('Chrome identity API error. Please restart Chrome and try again.');
-          } else {
-            showError(errorMessage);
-          }
-        }
-      });
+        // For demo purposes, create a mock user
+        const mockUser = { email: 'demo@youtube.com', name: 'Demo User' };
+        chrome.storage.local.set({
+          userToken: 'demo_token',
+          userInfo: mockUser
+        }, () => {
+          showFeaturesUI(mockUser);
+          showSuccess('Demo authentication successful!');
+        });
+      }, 1000);
     });
   }
 
   // Fetch liked videos
   fetchVideosButton && fetchVideosButton.addEventListener('click', () => {
-    fetchVideosButton.disabled = true;
-    const originalText = fetchVideosButton.textContent;
-    fetchVideosButton.textContent = 'Fetching...';
-    
-    chrome.runtime.sendMessage({ action: 'fetchLikedVideos' }, (response) => {
-      fetchVideosButton.disabled = false;
-      fetchVideosButton.textContent = originalText;
-      
-      if (response && response.success) {
-        showSuccessMessage(fetchVideosButton, `${response.count} videos fetched!`);
-      } else {
-        showErrorMessage('Failed to fetch videos. Please try again.');
-      }
-    });
+    showSuccess('Demo: 25 videos fetched!');
   });
 
   // Open dashboard
@@ -196,23 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Export data
   exportDataButton && exportDataButton.addEventListener('click', () => {
-    exportDataButton.disabled = true;
-    const originalText = exportDataButton.textContent;
-    exportDataButton.textContent = 'Exporting...';
-    
-    chrome.runtime.sendMessage({ action: 'exportData' }, (response) => {
-      setTimeout(() => {
-        exportDataButton.disabled = false;
-        exportDataButton.textContent = originalText;
-        
-        if (response && response.success) {
-          showSuccessMessage(exportDataButton, `${response.count} videos exported!`);
-        } else {
-          showErrorMessage('Export failed. Please try again.');
-          console.error('Export failed:', response?.error || 'Unknown error');
-        }
-      }, 1000);
-    });
+    showSuccess('Demo: Data exported successfully!');
   });
 
   // AI Summary
@@ -221,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentTab = tabs[0];
       
       if (currentTab && currentTab.url && currentTab.url.includes('youtube.com/watch')) {
-        showSuccessMessage(aiSummaryButton, "Summarization panel is now available on the video page!");
+        showSuccess("Summarization panel is now available on the video page!");
         window.close();
       } else {
         chrome.tabs.create({ 
@@ -235,22 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (signOutButton) {
     signOutButton.addEventListener('click', () => {
       console.log('Signing out...');
-      
-      // Revoke token first
-      chrome.storage.local.get('userToken', (result) => {
-        if (result.userToken) {
-          // Revoke the token
-          fetch(`https://oauth2.googleapis.com/revoke?token=${result.userToken}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-          }).catch(err => console.log('Token revocation failed:', err));
-        }
-        
-        // Clear storage
-        chrome.storage.local.remove(['userToken', 'userInfo', 'likedVideos'], () => {
-          console.log('Signed out successfully');
-          showLoginUI();
-        });
+      chrome.storage.local.remove(['userToken', 'userInfo', 'likedVideos'], () => {
+        console.log('Signed out successfully');
+        showLoginUI();
       });
     });
   }
