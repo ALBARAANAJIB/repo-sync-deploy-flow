@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // YouTube API configuration
   const YOUTUBE_API_KEY = 'AIzaSyCkxngJEfNG2IRp7bsUFjrWUQc4ZsOTOkY'; // Your hardcoded API key
-  const CLIENT_ID = 'YOUR_CLIENT_ID'; // You mentioned you implemented proper client ID
+  const CLIENT_ID = '304162096302-488h9fkval9ts7ou2d7k9mv3hmb79lpm.apps.googleusercontent.com'; // You mentioned you implemented proper client ID
 
   // Enhanced authentication check with real Google OAuth
   function checkAuthStatus() {

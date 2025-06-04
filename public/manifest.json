@@ -42,7 +42,7 @@
     "*://*.googleapis.com/*"
   ],
   "oauth2": {
-    "client_id": "YOUR_CLIENT_ID.apps.googleusercontent.com",
+    "client_id": "304162096302-488h9fkval9ts7ou2d7k9mv3hmb79lpm.apps.googleusercontent.com",
     "scopes": ["https://www.googleapis.com/auth/youtube.readonly"]
   }
 }
