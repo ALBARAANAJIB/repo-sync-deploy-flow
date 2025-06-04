@@ -2,64 +2,37 @@
 // YouTube Enhancer Content Script
 console.log('🚀 YouTube Enhancer content script loaded');
 
-// Import our Gemini utilities (this will be bundled)
+// Import our utilities from the bundled extension
 let generateVideoSummary, extractVideoId;
 
-// Load the utilities dynamically
-try {
-  // In a real extension, these would be imported properly
-  // For now, we'll implement basic versions here
-  generateVideoSummary = async (options = {}) => {
-    // This is a placeholder - the actual implementation would use the Gemini API
-    console.log('🤖 Generating summary...', options);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    if (options.summaryType === 'detailed') {
-      return `
-        <h4 style="margin: 0 0 8px 0; color: #333;">Detailed Video Analysis:</h4>
-        <ul style="margin: 0; padding-left: 20px; color: #555;">
-          <li>This is a comprehensive analysis of the video content</li>
-          <li>Detailed examination of key topics and themes</li>
-          <li>In-depth discussion of main arguments presented</li>
-          <li>Analysis of supporting evidence and examples</li>
-          <li>Evaluation of conclusions and implications</li>
-          <li>Assessment of target audience and practical applications</li>
-          <li>Summary of actionable takeaways and recommendations</li>
-        </ul>
-        <p style="margin: 8px 0 0 0; font-size: 12px; color: #888;">Generated with Gemini AI • Detailed Analysis</p>
-      `;
-    } else {
-      return `
-        <h4 style="margin: 0 0 8px 0; color: #333;">Quick Summary:</h4>
-        <ul style="margin: 0; padding-left: 20px; color: #555;">
-          <li>This is a demonstration of the AI summary feature</li>
-          <li>The panel has been successfully injected into the page</li>
-          <li>Quick summary provides key takeaways efficiently</li>
-          <li>Real summarization powered by Gemini AI</li>
-        </ul>
-        <p style="margin: 8px 0 0 0; font-size: 12px; color: #888;">Generated with Gemini AI • Quick Summary</p>
-      `;
-    }
-  };
-  
-  extractVideoId = (url) => {
-    const patterns = [
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/watch\?.*v=)([^&\s]+)/,
-      /youtube\.com\/shorts\/([^&\s]+)/,
-    ];
-    
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match && match[1]) {
-        return match[1];
+// Load the Gemini utilities
+async function loadGeminiUtils() {
+  try {
+    const { generateVideoSummary: genSummary, extractVideoId: extractId } = await import(chrome.runtime.getURL('src/utils/geminiUtils.js'));
+    generateVideoSummary = genSummary;
+    extractVideoId = extractId;
+    console.log('✅ Gemini utilities loaded successfully');
+  } catch (error) {
+    console.error('❌ Failed to load Gemini utilities:', error);
+    // Fallback implementation
+    generateVideoSummary = async (options = {}) => {
+      throw new Error('Gemini utilities not available');
+    };
+    extractVideoId = (url) => {
+      const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/watch\?.*v=)([^&\s]+)/,
+        /youtube\.com\/shorts\/([^&\s]+)/,
+      ];
+      
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+          return match[1];
+        }
       }
-    }
-    return null;
-  };
-} catch (error) {
-  console.warn('Could not load Gemini utilities:', error);
+      return null;
+    };
+  }
 }
 
 // Simple, reliable injection function
@@ -146,7 +119,7 @@ function injectSummarizationPanel() {
         color: #666;
       ">
         <div style="display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #ff0000; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        <p style="margin: 8px 0 0 0; font-size: 14px;">Generating summary...</p>
+        <p style="margin: 8px 0 0 0; font-size: 14px;">Generating summary with Gemini AI...</p>
       </div>
     `;
 
@@ -193,7 +166,11 @@ function injectSummarizationPanel() {
         
         console.log('🎬 Video info:', { videoId, title, channel });
         
-        // Generate summary
+        if (!videoId) {
+          throw new Error('No video ID found');
+        }
+        
+        // Generate summary using the real Gemini API
         const summary = await generateVideoSummary({
           videoId,
           videoTitle: title,
@@ -233,9 +210,10 @@ function injectSummarizationPanel() {
 }
 
 // Initialize on video pages
-function init() {
+async function init() {
   if (window.location.href.includes('youtube.com/watch')) {
-    console.log('🎬 Video page detected, injecting panel...');
+    console.log('🎬 Video page detected, loading utilities and injecting panel...');
+    await loadGeminiUtils();
     injectSummarizationPanel();
   }
 }
