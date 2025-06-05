@@ -207,6 +207,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       noVideosElement.style.display = 'none';
     }
+    
+    // Update selection UI after rendering
+    updateSelectionUI();
   }
   
   // Create a video card element
@@ -264,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         selectedVideos.delete(video.id);
       }
-      updateSelectionCount();
+      updateSelectionUI();
     });
     
     if (selectedVideos.has(video.id)) {
@@ -515,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (response && response.success) {
         videos = videos.filter(video => video.id !== videoId);
         selectedVideos.delete(videoId);
-        updateSelectionCount();
+        updateSelectionUI();
         renderVideos();
       } else {
         alert('Failed to delete video. Please try again.');
@@ -540,19 +543,33 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     
-    updateSelectionCount();
+    updateSelectionUI();
   }
   
-  // Update selection count
-  function updateSelectionCount() {
+  // Update selection UI - show/hide sticky bar and update counts
+  function updateSelectionUI() {
     const count = selectedVideos.size;
-    selectionCountElement.textContent = `${count} video${count !== 1 ? 's' : ''} selected`;
-    deleteSelectedButton.disabled = count === 0;
+    const stickyBar = document.querySelector('.sticky-bottom-bar');
+    
+    if (count > 0) {
+      stickyBar.style.display = 'flex';
+      selectionCountElement.textContent = `${count} video${count !== 1 ? 's' : ''} selected`;
+      deleteSelectedButton.disabled = false;
+      
+      const checkboxes = document.querySelectorAll('.video-checkbox');
+      const allSelected = checkboxes.length === selectedVideos.size && checkboxes.length > 0;
+      selectAllButton.textContent = allSelected ? 'Deselect All' : 'Select All';
+    } else {
+      stickyBar.style.display = 'none';
+      selectAllButton.textContent = 'Select All';
+    }
   }
   
   // Show delete confirmation modal
   function showDeleteConfirmation() {
     if (selectedVideos.size > 0) {
+      const confirmText = document.querySelector('#confirmation-modal p');
+      confirmText.textContent = `Are you sure you want to delete ${selectedVideos.size} selected video${selectedVideos.size !== 1 ? 's' : ''}? This action cannot be undone.`;
       confirmationModal.style.display = 'flex';
     }
   }
@@ -586,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (deleted + failed === totalToDelete) {
           videos = videos.filter(video => !selectedVideos.has(video.id));
           selectedVideos.clear();
-          updateSelectionCount();
+          updateSelectionUI();
           loadingElement.style.display = 'none';
           renderVideos();
           
