@@ -18,6 +18,106 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedVideos = new Set();
   let isLoadingMore = false;
   
+  // Add missing CSS for sticky bottom bar
+  const style = document.createElement('style');
+  style.textContent = `
+    .sticky-bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border-top: 1px solid #e5e7eb;
+      padding: 16px 20px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+    
+    .selection-info {
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+    }
+    
+    .bulk-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .secondary-button {
+      background: #f9fafb;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .secondary-button:hover {
+      background: #f3f4f6;
+      border-color: #9ca3af;
+    }
+    
+    .danger-button {
+      background: #dc2626;
+      color: white;
+      border: 1px solid #dc2626;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .danger-button:hover {
+      background: #b91c1c;
+      border-color: #b91c1c;
+    }
+    
+    .danger-button:disabled {
+      background: #9ca3af;
+      border-color: #9ca3af;
+      cursor: not-allowed;
+    }
+    
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 400px;
+      margin: 20px;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+  `;
+  document.head.appendChild(style);
+  
   // Initialize the dashboard
   init();
 
@@ -271,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateSelectionUI();
     });
     
+    // Restore checkbox state if it was previously selected
     if (selectedVideos.has(video.id)) {
       checkbox.checked = true;
     }
@@ -530,16 +631,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Toggle select all videos
   function toggleSelectAll() {
     const checkboxes = document.querySelectorAll('.video-checkbox');
-    const allSelected = checkboxes.length === selectedVideos.size;
+    const allSelected = checkboxes.length === selectedVideos.size && checkboxes.length > 0;
     
     console.log('Toggle select all. Current selected:', selectedVideos.size, 'Total checkboxes:', checkboxes.length);
     
     if (allSelected) {
+      // Deselect all
       selectedVideos.clear();
       checkboxes.forEach(checkbox => {
         checkbox.checked = false;
       });
     } else {
+      // Select all
       checkboxes.forEach(checkbox => {
         checkbox.checked = true;
         selectedVideos.add(checkbox.getAttribute('data-id'));
@@ -567,6 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       stickyBar.style.display = 'none';
       selectAllButton.textContent = 'Select All';
+      deleteSelectedButton.disabled = true;
     }
   }
   
