@@ -262,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const checkbox = card.querySelector('.video-checkbox');
     checkbox.addEventListener('change', (e) => {
+      console.log('Checkbox changed:', e.target.checked, 'for video:', video.id);
       if (e.target.checked) {
         selectedVideos.add(video.id);
       } else {
@@ -531,6 +532,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkboxes = document.querySelectorAll('.video-checkbox');
     const allSelected = checkboxes.length === selectedVideos.size;
     
+    console.log('Toggle select all. Current selected:', selectedVideos.size, 'Total checkboxes:', checkboxes.length);
+    
     if (allSelected) {
       selectedVideos.clear();
       checkboxes.forEach(checkbox => {
@@ -550,6 +553,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateSelectionUI() {
     const count = selectedVideos.size;
     const stickyBar = document.querySelector('.sticky-bottom-bar');
+    
+    console.log('UpdateSelectionUI called. Selected count:', count);
     
     if (count > 0) {
       stickyBar.style.display = 'flex';
