@@ -1,5 +1,5 @@
 // OAuth 2.0 constants
-const CLIENT_ID = '304162096302-c470kd77du16s0lrlumobc6s8u6uleng.apps.googleusercontent.com';
+const CLIENT_ID = '304162096302-4mpo9949jogs1ptnpmc0s4ipkq53dbsm.apps.googleusercontent.com';
 const REDIRECT_URL = chrome.identity.getRedirectURL();
 const SCOPES = [
   'https://www.googleapis.com/auth/youtube.readonly',
@@ -1084,37 +1084,28 @@ function processSrtTranscript(srtText) {
   }
 }
 
-// Function to authenticate with YouTube
+// Updated authenticate function using getAuthToken instead of launchWebAuthFlow
 async function authenticate() {
   return new Promise((resolve, reject) => {
-    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URL)}&scope=${encodeURIComponent(SCOPES.join(' '))}`;
-    
-    chrome.identity.launchWebAuthFlow(
-      { url: authUrl, interactive: true },
-      (redirectUrl) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-        
-        if (!redirectUrl) {
-          reject(new Error('Authentication failed'));
-          return;
-        }
-        
-        const url = new URL(redirectUrl);
-        const hash = url.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const token = params.get('access_token');
-        
-        if (!token) {
-          reject(new Error('No access token found in the response'));
-          return;
-        }
-        
-        resolve(token);
+    // Use Chrome's identity.getAuthToken for Manifest V3
+    chrome.identity.getAuthToken({ 
+      interactive: true,
+      scopes: SCOPES
+    }, (token) => {
+      if (chrome.runtime.lastError) {
+        console.error('Authentication error:', chrome.runtime.lastError);
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
       }
-    );
+      
+      if (!token) {
+        reject(new Error('No access token received'));
+        return;
+      }
+      
+      console.log('Authentication successful');
+      resolve(token);
+    });
   });
 }
 
