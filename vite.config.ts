@@ -26,7 +26,8 @@ export default defineConfig({
       input: {
         popup: 'public/popup.html',
         dashboard: 'public/dashboard.html'
-      }
+      },
+      external: ['content.js', 'background.js', 'popup.js', 'dashboard.js']
     }
   }
 })

@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const userEmail = document.getElementById('user-email');
   const userInitial = document.getElementById('user-initial');
   const loadMoreContainer = document.querySelector('.load-more-container');
-  const stickyBar = document.getElementById('sticky-bottom-bar');
   
   let videos = [];
   let selectedVideos = new Set();
@@ -544,47 +543,16 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSelectionCount();
   }
   
-  // Update selection count and show/hide sticky bar
+  // Update selection count
   function updateSelectionCount() {
     const count = selectedVideos.size;
-    const stickyBar = document.getElementById('sticky-bottom-bar');
-    
     selectionCountElement.textContent = `${count} video${count !== 1 ? 's' : ''} selected`;
     deleteSelectedButton.disabled = count === 0;
-    
-    // Show/hide sticky bar based on selection
-    if (count > 0) {
-      stickyBar.style.display = 'block';
-    } else {
-      stickyBar.style.display = 'none';
-    }
-    
-    // Update select all button text
-    const allVideosCount = document.querySelectorAll('.video-checkbox').length;
-    if (count === allVideosCount && count > 0) {
-      selectAllButton.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 11l3 3L22 4"/>
-          <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-        </svg>
-        Deselect All
-      `;
-    } else {
-      selectAllButton.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 11l3 3L22 4"/>
-          <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-        </svg>
-        Select All
-      `;
-    }
   }
   
   // Show delete confirmation modal
   function showDeleteConfirmation() {
     if (selectedVideos.size > 0) {
-      const deleteCountElement = document.getElementById('delete-count');
-      deleteCountElement.textContent = selectedVideos.size;
       confirmationModal.style.display = 'flex';
     }
   }

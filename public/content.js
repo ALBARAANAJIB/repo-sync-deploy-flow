@@ -1,3 +1,4 @@
+// Enhanced YouTube extension with professional design and advanced long video summarization
 function injectSummarizationPanel() {
   // Check if we're on a YouTube video page
   if (!window.location.href.includes('youtube.com/watch')) {
@@ -299,10 +300,24 @@ function detectVideoLanguage() {
         ],
         weight: 3
       },
+      'Thai': {
+        patterns: [
+          /[\u0e00-\u0e7f]/g, // Thai script
+          /\b(และ|หรือ|ใน|ที่|เป็น|มี|จะ|ได้|แล้ว|นี้|นั้น|เขา|เธอ|ผม|ฉัน|คุณ)\b/g
+        ],
+        weight: 3
+      },
+      'German': {
+        patterns: [
+          /\b(der|die|das|und|oder|ich|du|er|sie|es|wir|ihr|sie|ein|eine|einen|mit|von|zu|auf|in|an|für|über|durch|nach|vor|bei|um|ohne|gegen|trotz|während|seit|bis|statt|außer|innerhalb|außerhalb)\b/g,
+          /[äöüß]/g
+        ],
+        weight: 2
+      },
       'Spanish': {
         patterns: [
           /\b(el|la|los|las|de|del|y|o|en|con|por|para|como|que|se|le|lo|un|una|es|son|pero|si|no|muy|más|todo|todos|esta|este|están|fue|ser|estar|ter|fazer|ir|ver|dar|saber|querer|poder|dizer|cada|outro|mismo|tanto|menos|algo)\b/g,
-          /[ñáéíóú]/g
+          /[ñáéíóúü]/g
         ],
         weight: 2
       },
@@ -313,13 +328,12 @@ function detectVideoLanguage() {
         ],
         weight: 2
       },
-      'German': {
+      'Portuguese': {
         patterns: [
-          /\b(der|die|das|den|dem|des|ein|eine|einen|einem|einer|eines|ich|du|er|sie|es|wir|ihr|sie|mich|dich|sich|uns|euch|mir|dir|ihm|ihr|ihnen|und|oder|aber|denn|sondern|wenn|dass|weil|obwohl|damit|falls|bevor|nachdem|während|seit|bis|statt|außer|innerhalb|außerhalb|ist|sind|war|waren|bin|bist|haben|hat|hatte|hatten|werden|wird|wurde|wurden|können|kann|konnte|konnten|sollen|soll|sollte|sollten|müssen|muss|musste|mussten|dürfen|darf|durfte|durften|mögen|mag|mochte|mochten|wollen|will|wollte|wollten|machen|macht|machte|machten|gehen|geht|ging|gingen|kommen|kommt|kam|kamen|sehen|sieht|sah|sahen|sagen|sagt|sagte|sagten|denken|denkt|dachte|dachten|glauben|glaubt|glaubte|glaubten|wissen|weiß|wusste|wussten|verstehen|versteht|verstand|verstanden|sprechen|spricht|sprach|sprachen|hören|hört|hörte|hörten|lesen|liest|las|lasen|schreiben|schreibt|schrieb|schrieben|arbeiten|arbeitet|arbeitete|arbeiteten|leben|lebt|lebte|lebten|spielen|spielt|spielte|spielten|lernen|lernt|lernte|lernten|fahren|fährt|fuhr|fuhren|fliegen|fliegt|flog|flogen|kaufen|kauft|kaufte|kauften|verkaufen|verkauft|verkaufte|verkauften|essen|isst|aß|aßen|trinken|trinkt|trank|tranken|schlafen|schläft|schlief|schliefen|aufstehen|steht|auf|stand|auf|standen|auf|wie|was|wo|wann|warum|wer|welche|welcher|welches|diese|dieser|dieses|jede|jeder|jedes|alle|alles|noch|schon|immer|nie|heute|gestern|morgen|hier|dort|jetzt|dann|also|sehr|mehr|weniger|gut|besser|schlecht|schlechter|groß|größer|klein|kleiner|deutsch|deutschland|video|kanal|abonnieren|kommentar)\b/g,
-          /[äöüßÄÖÜ]/g,
-          /\b\w+ung\b|\b\w+keit\b|\b\w+heit\b|\b\w+schaft\b/g
+          /\b(o|a|os|as|de|da|do|das|dos|e|ou|em|com|por|para|como|que|se|lhe|um|uma|é|são|mas|se|não|muito|mais|todo|todos|esta|este|foram|ser|estar|ter|fazer|ir|ver|dar|saber|querer|poder|dizer|cada|outro|mesmo|tanto|menos|algo)\b/g,
+          /[ãõáéíóúâêîôûàèç]/g
         ],
-        weight: 3
+        weight: 2
       },
       'English': {
         patterns: [
@@ -369,76 +383,564 @@ function detectVideoLanguage() {
   return { detectedLanguage, confidence, sources };
 }
 
-// Enhanced video summarization function
-async function summarizeVideo(videoUrl, detailLevel, loadingMessage, contentDiv, loadingDiv, summarizeBtn) {
-  const loadingMessages = [
-    'Analyzing video content...',
-    'Processing with AI...',
-    'Generating summary...',
-    'Almost ready...'
-  ];
+// Enhanced prompt with better language consistency
+function getAdvancedPrompt(detailLevel, isLongVideo = false, videoDuration = '') {
+  const languageResult = detectVideoLanguage();
   
-  let messageIndex = 0;
-  const messageInterval = setInterval(() => {
-    if (loadingMessage) {
-      loadingMessage.textContent = loadingMessages[messageIndex % loadingMessages.length];
-      messageIndex++;
-    }
-  }, 2000);
+  const baseInstructions = `CRITICAL LANGUAGE INSTRUCTION: You MUST respond ONLY in ${languageResult.detectedLanguage}.
+
+ENHANCED LANGUAGE DETECTION (Confidence: ${languageResult.confidence}):
+- Detected from sources: ${languageResult.sources.join(', ')}
+- Target language: ${languageResult.detectedLanguage}
+- ABSOLUTE REQUIREMENT: Write EVERYTHING in ${languageResult.detectedLanguage}
+- NO mixed languages allowed - complete consistency required
+- ALL headers, content, and conclusions must be in ${languageResult.detectedLanguage}
+
+Special handling for music/artistic content:
+- If minimal speech, focus on visual storytelling and artistic elements
+- Describe musical style, production quality, and emotional impact
+- Comment on any available lyrics or vocal performances
+- Analyze the overall aesthetic and creative direction
+
+LANGUAGE CONSISTENCY CHECK:
+Before writing each section, confirm you are using ${languageResult.detectedLanguage}.
+This applies to: titles, headings, content, transitions, and conclusions.`;
+
+  if (isLongVideo) {
+    return `${baseInstructions}
+
+This is a LONG VIDEO (${videoDuration || '50+ minutes'}). Provide comprehensive analysis in ${languageResult.detectedLanguage}.
+
+STRUCTURE (all in ${languageResult.detectedLanguage}):
+
+**Video Overview:**
+- Content type and main theme
+- Key elements and context
+
+**Main Segments & Progression:**
+Break into logical segments:
+
+**Early Section (0-20%):**
+- Initial setup and introduction
+- Key early elements
+
+**Development Phase (20-60%):**
+- Major developments and progression
+- Important moments and changes
+
+**Climax & Resolution (60-100%):**
+- Peak moments and conclusion
+- Final outcomes and impact
+
+**Key Highlights:**
+- Most significant moments
+- Memorable elements and impact
+
+**Final Analysis:**
+- Overall assessment and significance
+- Lasting impact and conclusion
+
+${detailLevel === 'quick' ? 
+  `Provide this structure in 300-400 words in ${languageResult.detectedLanguage}.` : 
+  `Provide this structure in 600-800 words in ${languageResult.detectedLanguage} with detailed analysis.`}
+
+Remember: Use ONLY ${languageResult.detectedLanguage} throughout your entire response.`;
+  }
+
+  const wordCount = detailLevel === 'quick' ? '150-250' : '400-600';
+  return `${baseInstructions}
+
+Create a ${detailLevel} summary (${wordCount} words) in ${languageResult.detectedLanguage}.
+
+${detailLevel === 'quick' ? 
+  `Summarize main points with clear structure in ${languageResult.detectedLanguage}.` : 
+  `Cover topics thoroughly with organized sections in ${languageResult.detectedLanguage}.`}
+
+Structure with clear headings, all in ${languageResult.detectedLanguage}.
+
+FINAL CHECK: Ensure every word is in ${languageResult.detectedLanguage}.`;
+}
+
+async function summarizeVideo(videoUrl, detailLevel, loadingMessage, contentDiv, loadingDiv, summarizeBtn) {
+  const API_KEY = 'AIzaSyDxQpk6jmBsM5lsGdzRJKokQkwSVTk5sRg';
+  const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
 
   try {
-    console.log('Starting video summarization for:', videoUrl);
+    // Enhanced video duration detection
+    const videoDuration = getVideoDuration();
+    const isLongVideo = checkIfLongVideo(videoDuration);
     
-    // Import the Gemini utility
-    const { summarizeYouTubeVideo } = await import(chrome.runtime.getURL('src/utils/geminiUtils.js'));
+    const messages = {
+      quick: isLongVideo ? 'Analyzing long video structure and key segments...' : 'Creating comprehensive overview...',
+      detailed: isLongVideo ? 'Processing long video segments with detailed analysis...' : 'Analyzing content thoroughly...'
+    };
     
-    console.log('Calling Gemini API...');
-    const summary = await summarizeYouTubeVideo(videoUrl, detailLevel);
+    loadingMessage.textContent = messages[detailLevel] || 'Processing video...';
     
-    clearInterval(messageInterval);
-    
-    if (summary && summary.length > 10) {
-      console.log('Summary generated successfully');
+    // Enhanced configuration with higher token limits and better handling
+    const requestBody = {
+      contents: [
+        {
+          parts: [
+            { text: getAdvancedPrompt(detailLevel, isLongVideo, videoDuration) },
+            {
+              fileData: {
+                fileUri: videoUrl,
+                mimeType: "video/youtube"
+              }
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.01, // Very low for consistency
+        maxOutputTokens: isLongVideo ? 
+          (detailLevel === 'quick' ? 700 : 1800) : 
+          (detailLevel === 'quick' ? 500 : 1200),
+        topP: 0.05,
+        topK: 1,
+        candidateCount: 1,
+        responseMimeType: "text/plain",
+        stopSequences: []
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_NONE"
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH", 
+          threshold: "BLOCK_NONE"
+        },
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_NONE"
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_NONE"
+        }
+      ]
+    };
+
+    console.log('Making enhanced API request for', isLongVideo ? `long video (${videoDuration})` : 'standard video...');
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
       
-      // Display the summary
-      contentDiv.innerHTML = `
-        <div style="padding: 16px; line-height: 1.6; color: #374151;">
-          <div style="white-space: pre-wrap; font-size: 13px;">${summary}</div>
-        </div>
-      `;
-      
-      loadingDiv.style.display = 'none';
-      contentDiv.style.display = 'block';
-    } else {
-      throw new Error('Summary generation failed - no content received');
+      if (response.status === 429) {
+        throw new Error('High demand detected 🌟 Please try again in a few minutes');
+      }
+      if (response.status === 400) {
+        if (errorText.includes('Video too long') || errorText.includes('INVALID_ARGUMENT')) {
+          throw new Error('Video processing limit reached 📹 Try Quick mode or a shorter video');
+        }
+        throw new Error('Video format issue 🎬 Please try a different video');
+      }
+      if (response.status >= 500) {
+        throw new Error('Server taking a break ☕ Please try again shortly');
+      }
+      throw new Error('Service busy 🌸 Please try again in a moment');
     }
+
+    const data = await response.json();
+    console.log('API Response received:', data);
     
+    let summary = '';
+    let isPartial = false;
+    
+    if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      summary = data.candidates[0].content.parts[0].text.trim();
+      
+      // Check if response was truncated due to max tokens
+      if (data.candidates[0].finishReason === 'MAX_TOKENS') {
+        isPartial = true;
+        console.log('Response truncated due to max tokens, attempting to complete...');
+        
+        // Try to get a completion with a follow-up request for the ending
+        try {
+          const languageResult = detectVideoLanguage();
+          const completionRequest = {
+            contents: [
+              {
+                parts: [
+                  { 
+                    text: `Complete this summary that was cut off. Provide ONLY the missing conclusion/ending in ${languageResult.detectedLanguage}. Do not repeat the existing content. Here's what we have so far: "${summary.slice(-200)}"\n\nProvide a proper conclusion that wraps up the summary naturally in ${languageResult.detectedLanguage}.` 
+                  }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.01,
+              maxOutputTokens: 250,
+              topP: 0.05
+            }
+          };
+          
+          const completionResponse = await fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(completionRequest)
+          });
+          
+          if (completionResponse.ok) {
+            const completionData = await completionResponse.json();
+            if (completionData?.candidates?.[0]?.content?.parts?.[0]?.text) {
+              const completion = completionData.candidates[0].content.parts[0].text.trim();
+              summary += (summary.endsWith('.') || summary.endsWith('!') || summary.endsWith('?') ? ' ' : '. ') + completion;
+              isPartial = false;
+              console.log('Successfully completed truncated summary');
+            }
+          }
+        } catch (completionError) {
+          console.log('Could not complete truncated summary, proceeding with partial content');
+        }
+      }
+    } else {
+      // Handle specific finish reasons
+      if (data?.candidates?.[0]?.finishReason) {
+        const reason = data.candidates[0].finishReason;
+        console.log('Finish reason:', reason);
+        
+        if (reason === 'SAFETY') {
+          throw new Error('Content needs special handling 🛡️ Try a different video');
+        } else if (reason === 'RECITATION') {
+          throw new Error('Copyright considerations detected 📄 Try a different video');
+        } else if (reason === 'OTHER') {
+          throw new Error('Processing issue detected 🔧 Please try again');
+        }
+      }
+      
+      if (!summary) {
+        throw new Error('Processing incomplete 🤔 Please try again');
+      }
+    }
+
+    // Ensure we have substantial content
+    if (summary && summary.length > 50) {
+      showSuccess(contentDiv, loadingDiv, summarizeBtn, summary, detailLevel, isPartial);
+    } else {
+      throw new Error('Summary too brief 📝 Please try again with different settings');
+    }
   } catch (error) {
-    clearInterval(messageInterval);
-    console.error('Summarization error:', error);
-    
-    const errorMessage = error.message || 'Failed to generate summary';
-    
-    contentDiv.innerHTML = `
-      <div style="padding: 16px; text-align: center;">
-        <div style="color: #dc2626; font-size: 13px; margin-bottom: 12px;">
-          ⚠️ ${errorMessage}
-        </div>
-        <button onclick="location.reload()" style="
-          background: #f3f4f6;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          padding: 8px 16px;
-          font-size: 12px;
-          cursor: pointer;
-        ">Try Again</button>
-      </div>
-    `;
-    
-    loadingDiv.style.display = 'none';
-    contentDiv.style.display = 'block';
-    summarizeBtn.style.display = 'block';
+    console.error('Error in summarizeVideo:', error);
+    if (error.message.includes('fetch') || error.message.includes('network')) {
+      throw new Error('Connection issue 🌐 Please check internet and try again');
+    }
+    throw error;
   }
+}
+
+// Enhanced video duration detection
+function getVideoDuration() {
+  const durationElement = document.querySelector('.ytp-time-duration');
+  if (durationElement) {
+    return durationElement.textContent;
+  }
+  
+  // Alternative selectors
+  const altDuration = document.querySelector('#movie_player .ytp-time-duration');
+  if (altDuration) {
+    return altDuration.textContent;
+  }
+  
+  return '';
+}
+
+// Improved long video detection
+function checkIfLongVideo(duration = '') {
+  if (!duration) {
+    duration = getVideoDuration();
+  }
+  
+  if (duration) {
+    const parts = duration.split(':');
+    if (parts.length >= 3) { // Hours:Minutes:Seconds format
+      return true;
+    } else if (parts.length === 2) { // Minutes:Seconds format
+      const minutes = parseInt(parts[0]);
+      return minutes >= 50;
+    }
+  }
+  
+  // Fallback: check if video player indicates long content
+  const videoElement = document.querySelector('video');
+  if (videoElement && videoElement.duration) {
+    return videoElement.duration >= 3000; // 50 minutes in seconds
+  }
+  
+  return false;
+}
+
+function showSuccess(contentDiv, loadingDiv, summarizeBtn, summary, detailLevel, isPartial = false) {
+  loadingDiv.style.display = 'none';
+  
+  const detailLabels = {
+    quick: 'Quick Summary',
+    detailed: 'Detailed Summary'
+  };
+  
+  // Add partial indicator if needed
+  const titleText = detailLabels[detailLevel] || 'Summary';
+  const finalTitle = isPartial ? `${titleText} (Auto-completed)` : titleText;
+  
+  contentDiv.innerHTML = `
+    <div style="
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      background: #f9fafb;
+      border-bottom: 1px solid #f3f4f6;
+    ">
+      <strong style="
+        color: #111827; 
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: -0.025em;
+      ">${finalTitle}</strong>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        ${isPartial ? '<span style="font-size: 10px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 3px;">✓ Completed</span>' : ''}
+        <button id="copy-summary" style="
+          background: #ffffff;
+          color: #374151;
+          border: 1px solid #d1d5db;
+          border-radius: 5px;
+          padding: 5px 10px;
+          font-size: 11px;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-family: inherit;
+        ">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+            <path d="m4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+          </svg>
+          Copy
+        </button>
+      </div>
+    </div>
+    <div style="
+      padding: 16px;
+      line-height: 1.7;
+      font-size: 14px;
+      color: #111827;
+      max-height: 500px;
+      overflow-y: auto;
+      word-wrap: break-word;
+      word-break: break-word;
+      white-space: pre-wrap;
+      font-weight: 400;
+      letter-spacing: -0.025em;
+      background: #ffffff;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 #f1f5f9;
+    " id="summary-text">${summary}</div>
+  `;
+  
+  // Enhanced scrollbar styling for webkit browsers
+  const summaryText = document.getElementById('summary-text');
+  if (summaryText) {
+    const style = document.createElement('style');
+    style.textContent = `
+      #summary-text::-webkit-scrollbar {
+        width: 6px;
+      }
+      #summary-text::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+      }
+      #summary-text::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      #summary-text::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  // Add copy functionality
+  const copyBtn = document.getElementById('copy-summary');
+  copyBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(summary);
+      copyBtn.innerHTML = `
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Copied!
+      `;
+      copyBtn.style.color = '#059669';
+      setTimeout(() => {
+        copyBtn.innerHTML = `
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+            <path d="m4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+          </svg>
+          Copy
+        `;
+        copyBtn.style.color = '#374151';
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  });
+  
+  contentDiv.style.display = 'block';
+  summarizeBtn.style.display = 'block';
+}
+
+function showError(contentDiv, loadingDiv, summarizeBtn, errorMessage) {
+  loadingDiv.style.display = 'none';
+  
+  contentDiv.innerHTML = `
+    <div style="
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    ">
+      <div style="
+        font-size: 16px;
+        margin-bottom: 8px;
+      ">😔</div>
+      <div style="
+        font-weight: 600; 
+        margin-bottom: 6px; 
+        font-size: 13px;
+        color: #dc2626;
+      ">Something went wrong</div>
+      <div style="
+        font-size: 12px; 
+        line-height: 1.4; 
+        color: #991b1b;
+        margin-bottom: 12px;
+      ">${errorMessage}</div>
+      <button onclick="document.getElementById('summarize-video-btn').click()" style="
+        background: #f9fafb;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 11px;
+        cursor: pointer;
+        font-weight: 500;
+        font-family: inherit;
+      ">🔄 Try Again</button>
+    </div>
+  `;
+  
+  contentDiv.style.display = 'block';
+  summarizeBtn.style.display = 'block';
+}
+
+// Inject liked videos page functionality
+function injectLikedVideosButtons() {
+  if (!window.location.href.includes('youtube.com/playlist?list=LL')) {
+    return;
+  }
+
+  const existingButtons = document.getElementById('youtube-enhancer-liked-buttons');
+  if (existingButtons) {
+    existingButtons.remove();
+  }
+
+  // Wait for the playlist header to load
+  const playlistHeader = document.querySelector('#header.ytd-playlist-header-renderer');
+  if (!playlistHeader) {
+    setTimeout(injectLikedVideosButtons, 1000);
+    return;
+  }
+
+  const buttonContainer = document.createElement('div');
+  buttonContainer.id = 'youtube-enhancer-liked-buttons';
+  buttonContainer.innerHTML = `
+    <div style="
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+    ">
+      <button id="fetch-liked-videos" style="
+        background: #f9fafb;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: inherit;
+      " onmouseover="this.style.background='#f3f4f6'" 
+         onmouseout="this.style.background='#f9fafb'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Fetch Videos
+      </button>
+      
+      <button id="export-liked-videos" style="
+        background: #f9fafb;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: inherit;
+      " onmouseover="this.style.background='#f3f4f6'" 
+         onmouseout="this.style.background='#f9fafb'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Export Data
+      </button>
+    </div>
+  `;
+
+  playlistHeader.appendChild(buttonContainer);
+
+  // Add event listeners
+  document.getElementById('fetch-liked-videos')?.addEventListener('click', () => {
+    if (window.chrome?.runtime) {
+      window.chrome.runtime.sendMessage({ action: 'fetchLikedVideos' });
+    }
+  });
+
+  document.getElementById('export-liked-videos')?.addEventListener('click', () => {
+    if (window.chrome?.runtime) {
+      window.chrome.runtime.sendMessage({ action: 'exportData' });
+    }
+  });
 }
 
 // Initialize based on page type
