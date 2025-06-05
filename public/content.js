@@ -369,6 +369,78 @@ function detectVideoLanguage() {
   return { detectedLanguage, confidence, sources };
 }
 
+// Enhanced video summarization function
+async function summarizeVideo(videoUrl, detailLevel, loadingMessage, contentDiv, loadingDiv, summarizeBtn) {
+  const loadingMessages = [
+    'Analyzing video content...',
+    'Processing with AI...',
+    'Generating summary...',
+    'Almost ready...'
+  ];
+  
+  let messageIndex = 0;
+  const messageInterval = setInterval(() => {
+    if (loadingMessage) {
+      loadingMessage.textContent = loadingMessages[messageIndex % loadingMessages.length];
+      messageIndex++;
+    }
+  }, 2000);
+
+  try {
+    console.log('Starting video summarization for:', videoUrl);
+    
+    // Import the Gemini utility
+    const { summarizeYouTubeVideo } = await import(chrome.runtime.getURL('src/utils/geminiUtils.js'));
+    
+    console.log('Calling Gemini API...');
+    const summary = await summarizeYouTubeVideo(videoUrl, detailLevel);
+    
+    clearInterval(messageInterval);
+    
+    if (summary && summary.length > 10) {
+      console.log('Summary generated successfully');
+      
+      // Display the summary
+      contentDiv.innerHTML = `
+        <div style="padding: 16px; line-height: 1.6; color: #374151;">
+          <div style="white-space: pre-wrap; font-size: 13px;">${summary}</div>
+        </div>
+      `;
+      
+      loadingDiv.style.display = 'none';
+      contentDiv.style.display = 'block';
+    } else {
+      throw new Error('Summary generation failed - no content received');
+    }
+    
+  } catch (error) {
+    clearInterval(messageInterval);
+    console.error('Summarization error:', error);
+    
+    const errorMessage = error.message || 'Failed to generate summary';
+    
+    contentDiv.innerHTML = `
+      <div style="padding: 16px; text-align: center;">
+        <div style="color: #dc2626; font-size: 13px; margin-bottom: 12px;">
+          ⚠️ ${errorMessage}
+        </div>
+        <button onclick="location.reload()" style="
+          background: #f3f4f6;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          padding: 8px 16px;
+          font-size: 12px;
+          cursor: pointer;
+        ">Try Again</button>
+      </div>
+    `;
+    
+    loadingDiv.style.display = 'none';
+    contentDiv.style.display = 'block';
+    summarizeBtn.style.display = 'block';
+  }
+}
+
 // Initialize based on page type
 function initializeExtension() {
   if (window.location.href.includes('youtube.com/watch')) {
